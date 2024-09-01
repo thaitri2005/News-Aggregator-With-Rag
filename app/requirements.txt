@@ -1,0 +1,5 @@
+Flask==2.3.2
+requests==2.31.0
+pymongo==4.5.0
+apscheduler==3.10.1
+Flask-CORS==3.0.10

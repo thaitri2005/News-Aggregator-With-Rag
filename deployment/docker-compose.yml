@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ../app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../app:/app
+    networks:
+      - app-network
+
+  frontend:
+    build: ../frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/frontend
+    networks:
+      - app-network
+
+networks:
+  app-network:
