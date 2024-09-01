@@ -30,6 +30,16 @@ services:
     networks:
       - app-network
 
+  scheduler:
+    build: ../app
+    command: python api/scheduler.py
+    depends_on:
+      - mongo
+    volumes:
+      - ../app:/app
+    networks:
+      - app-network
+
 volumes:
   mongo-data:
 
