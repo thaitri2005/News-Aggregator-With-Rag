@@ -6,7 +6,7 @@ __pycache__/
 # Node
 node_modules/
 build/
-/development/.env
+development/.env
 
 # Docker
 *.log
