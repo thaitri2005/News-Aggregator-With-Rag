@@ -1,13 +1,13 @@
 from flask import Flask
-from flask_cors import CORS
-from database import db
+from flask_cors import CORS  # type: ignore
 from api.routes import api
 
 app = Flask(__name__)
 CORS(app)
 
+# Register the blueprint
+app.register_blueprint(api, url_prefix='/api')
 
-app.register_blueprint(api)
 @app.route('/')
 def home():
     return "RAG AI News Aggregator Backend"

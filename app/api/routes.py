@@ -1,20 +1,36 @@
 from flask import Blueprint, jsonify, request
 from database import articles_collection, summaries_collection, queries_collection
 from bson.objectid import ObjectId
+from .gemini_integration import summarize_article
 
 api = Blueprint('api', __name__)
+
+# Helper function to convert ObjectId to string
+def convert_objectid_to_str(doc):
+    if isinstance(doc, dict):
+        for key, value in doc.items():
+            if isinstance(value, ObjectId):
+                doc[key] = str(value)
+    return doc
 
 # Get all articles
 @api.route('/articles', methods=['GET'])
 def get_articles():
-    articles = list(articles_collection.find({}, {"_id": 0}))  # Exclude the MongoDB _id field
+    articles = list(articles_collection.find({}, {"_id": 1, "title": 1, "content": 1, "date": 1, "source_url": 1}))
+    articles = [convert_objectid_to_str(article) for article in articles]
     return jsonify(articles)
 
 # Get a single article by ID
 @api.route('/articles/<id>', methods=['GET'])
 def get_article(id):
-    article = articles_collection.find_one({"_id": ObjectId(id)}, {"_id": 0})
+    try:
+        article_id = ObjectId(id)
+    except Exception as e:
+        return jsonify({"error": f"Invalid article ID: {str(e)}"}), 400
+
+    article = articles_collection.find_one({"_id": article_id})
     if article:
+        article = convert_objectid_to_str(article)
         return jsonify(article)
     else:
         return jsonify({"error": "Article not found"}), 404
@@ -32,14 +48,6 @@ def add_article():
     return jsonify({"message": "Article added successfully"}), 201
 
 # Get summaries
-# Helper function to convert ObjectId to string
-def convert_objectid_to_str(doc):
-    if isinstance(doc, dict):
-        for key, value in doc.items():
-            if isinstance(value, ObjectId):
-                doc[key] = str(value)
-    return doc
-
 @api.route('/summaries', methods=['GET'])
 def get_summaries():
     summaries = list(summaries_collection.find())
@@ -61,3 +69,14 @@ def add_query():
         "response": data["response"]
     })
     return jsonify({"message": "Query added successfully"}), 201
+
+# Summarize article
+@api.route('/summarize', methods=['POST'])
+def summarize():
+    data = request.json
+    article_text = data.get("article_text")
+    if not article_text:
+        return jsonify({"error": "No article text provided"}), 400
+
+    summary = summarize_article(article_text)
+    return jsonify({"summary": summary}), 200

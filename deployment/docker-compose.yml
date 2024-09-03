@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   backend:
-    build: ../app
+    build: 
+      context: ../app
     ports:
       - "5000:5000"
     volumes:
@@ -11,9 +12,15 @@ services:
       - app-network
     environment:
       - MONGO_URI=mongodb://mongo:27017/newsdb
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PYTHONPATH=/app  # Add this line to set PYTHONPATH
+    depends_on:
+      mongo:
+        condition: service_healthy
 
   frontend:
-    build: ../frontend
+    build: 
+      context: ../frontend
     ports:
       - "3000:3000"
     volumes:
@@ -29,12 +36,19 @@ services:
       - mongo-data:/data/db
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   scheduler:
-    build: ../app
+    build:
+      context: ../app
     command: python api/scheduler.py
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     volumes:
       - ../app:/app
     networks:

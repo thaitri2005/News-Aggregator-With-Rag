@@ -1,16 +1,23 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 import os
 
 class Database:
     def __init__(self):
-        self.client = MongoClient(os.getenv("MONGO_URI"))
-        self.db = self.client.newsdb
+        try:
+            self.client = MongoClient(os.getenv("MONGO_URI"))
+            self.db = self.client.newsdb
+            print("Database connection established.")
+        except errors.ServerSelectionTimeoutError as err:
+            print(f"Database connection failed: {err}")
+            self.db = None
 
     def get_collection(self, name):
-        return self.db[name]
+        if self.db is not None:
+            return self.db[name]
+        else:
+            raise ConnectionError("Failed to connect to the database.")
 
 db = Database()
-
 
 articles_collection = db.get_collection('articles')
 summaries_collection = db.get_collection('summaries')

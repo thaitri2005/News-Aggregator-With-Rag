@@ -2,7 +2,12 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from techcrunch_scraper import scrape_techcrunch
 from guardian_scraper import scrape_guardian
 from reuters_scraper import scrape_reuters
+import time
 
+# Delay start of scheduler tasks
+time.sleep(30)
+
+# Scheduler job definitions go here
 def job_techcrunch():
     print("Running TechCrunch scraper...")
     scrape_techcrunch()
@@ -19,7 +24,7 @@ if __name__ == "__main__":
     scheduler = BlockingScheduler()
 
     # Schedule the TechCrunch scraper to run every 12 hours
-    scheduler.add_job(job_techcrunch, 'interval', minutes=1)
+    scheduler.add_job(job_techcrunch, 'interval', minutes=2)
 
     # Schedule the Guardian scraper to run every 12 hours
     scheduler.add_job(job_guardian, 'interval', hours=12)
