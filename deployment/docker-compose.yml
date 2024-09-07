@@ -11,9 +11,9 @@ services:
     networks:
       - app-network
     environment:
-      - MONGO_URI=mongodb://mongo:27017/newsdb
+      - MONGO_URI=${MONGO_URI}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - PYTHONPATH=/app  # Add this line to set PYTHONPATH
+      - PYTHONPATH=/app  # Ensures the correct path for Python imports
     depends_on:
       mongo:
         condition: service_healthy
@@ -46,13 +46,15 @@ services:
     build:
       context: ../app
     command: python api/scheduler.py
-    depends_on:
-      mongo:
-        condition: service_healthy
     volumes:
       - ../app:/app
     networks:
       - app-network
+    environment:
+      - MONGO_URI=${MONGO_URI}
+    depends_on:
+      mongo:
+        condition: service_healthy
 
 volumes:
   mongo-data:

@@ -4,7 +4,7 @@ import os
 class Database:
     def __init__(self):
         try:
-            self.client = MongoClient(os.getenv("MONGO_URI"))
+            self.client = MongoClient(os.getenv("MONGO_URI"), maxPoolSize=100, minPoolSize=10)
             self.db = self.client.newsdb
             print("Database connection established.")
         except errors.ServerSelectionTimeoutError as err:

@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
+import logging
 
 # Load the environment variables from the .env file
 load_dotenv()
@@ -10,6 +11,10 @@ api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY is not set")
 genai.configure(api_key=api_key)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Function to summarize an article using the Gemini API
 def summarize_article(article_text):
@@ -34,4 +39,5 @@ def summarize_article(article_text):
         response = chat_session.send_message(article_text)
         return response.text
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        logger.error(f"An error occurred: {str(e)}")
+        return f"An error occurred while processing your request."

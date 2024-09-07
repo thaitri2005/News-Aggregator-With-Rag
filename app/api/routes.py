@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from database import articles_collection, summaries_collection, queries_collection
 from bson.objectid import ObjectId
 from .gemini_integration import summarize_article
+from .rag_model import retrieve_articles
 
 api = Blueprint('api', __name__)
 
@@ -80,3 +81,21 @@ def summarize():
 
     summary = summarize_article(article_text)
     return jsonify({"summary": summary}), 200
+
+@api.route('/retrieve', methods=['POST'])
+def retrieve():
+    try:
+        data = request.json
+        query = data.get('query')
+        page = int(data.get('page', 1))
+        limit = int(data.get('limit', 5))
+
+        if not query:
+            return jsonify({"error": "Query parameter is required"}), 400
+
+        articles = retrieve_articles(query, page, limit)
+        if not articles:
+            return jsonify({"message": "No articles found"}), 404
+        return jsonify(articles), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
