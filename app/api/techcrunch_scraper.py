@@ -36,9 +36,9 @@ def scrape_article_content(url):
 
 # Main function to scrape TechCrunch
 def scrape_techcrunch():
-    url = "https://techcrunch.com/"
+    base_url = "https://techcrunch.com"
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(base_url, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
     except requests.RequestException as e:
@@ -63,6 +63,13 @@ def scrape_techcrunch():
         if not link:
             logger.warning(f"Skipping article with title '{title}' because no link was found.")
             continue
+
+        # Prepend base URL if needed, ensuring no double slashes
+        if link.startswith('/'):
+            link = base_url + link
+        
+        # Log the URL for debugging purposes
+        logger.info(f"Fetching content from {link}")
 
         # Get the content from the article's page
         full_content = scrape_article_content(link)
