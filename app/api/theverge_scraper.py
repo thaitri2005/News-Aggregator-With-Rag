@@ -1,15 +1,24 @@
 import logging
+import os
 import requests
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Set up MongoDB connection
-client = MongoClient('mongo', 27017)
+# Set up MongoDB connection using MongoDB Atlas
+mongo_uri = os.getenv("MONGO_URI")
+if not mongo_uri:
+    raise ValueError("MONGO_URI is not set in the environment variables")
+
+client = MongoClient(mongo_uri)
 db = client.newsdb
 collection = db.articles
 
@@ -26,7 +35,7 @@ def scrape_theverge():
         logger.info(soup.prettify()[:500])
 
     except requests.RequestException as e:
-        logger.error(f"Error fetching The Verge page: {e}")
+        logger.error(f"Error fetching The Verge homepage: {e}")
         return
 
     # Updated selector to match the current HTML structure
@@ -62,7 +71,7 @@ def scrape_theverge():
 
         date = datetime.now()  # The Verge homepage doesn't provide the publication date, so use the current time.
 
-        # Check for duplicate articles
+        # Check for duplicate articles in the database
         if collection.find_one({'title': title, 'source_url': link}):
             logger.info(f"Duplicate found for article '{title}', skipping.")
             continue
@@ -97,7 +106,7 @@ def fetch_article_content(link):
         logger.info(soup.prettify()[:500])  # Log the first 500 characters of the page content
         
         # The main content is often in a specific div or class, update based on actual structure
-        content_div = soup.find('div', class_='duet--article--article-body-component-container')  # Replace with actual class name
+        content_div = soup.find('div', class_='c-entry-content')  # Updated the class for The Verge article content
         if content_div:
             paragraphs = content_div.find_all('p')
             full_content = "\n".join([p.get_text(strip=True) for p in paragraphs])
@@ -108,7 +117,6 @@ def fetch_article_content(link):
     except requests.RequestException as e:
         logger.error(f"Error fetching article content from {link}: {e}")
         return None
-
 
 
 if __name__ == "__main__":

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: 
@@ -11,12 +9,11 @@ services:
     networks:
       - app-network
     environment:
-      - MONGO_URI=${MONGO_URI}
+      - MONGO_URI=${MONGO_URI}  # Use the MongoDB Atlas URI from your environment variables
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - PYTHONPATH=/app  # Ensures the correct path for Python imports
     depends_on:
-      mongo:
-        condition: service_healthy
+      - scheduler  # Backend depends on the scheduler service
 
   frontend:
     build: 
@@ -28,20 +25,6 @@ services:
     networks:
       - app-network
 
-  mongo:
-    image: mongo:4.4
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   scheduler:
     build:
       context: ../app
@@ -51,13 +34,8 @@ services:
     networks:
       - app-network
     environment:
-      - MONGO_URI=${MONGO_URI}
-    depends_on:
-      mongo:
-        condition: service_healthy
-
-volumes:
-  mongo-data:
+      - MONGO_URI=${MONGO_URI}  # Use MongoDB Atlas
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
 
 networks:
   app-network:

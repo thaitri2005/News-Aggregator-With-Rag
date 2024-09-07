@@ -4,13 +4,22 @@ import requests
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Set up MongoDB connection
-client = MongoClient('mongo', 27017)
+# Set up MongoDB connection using MongoDB Atlas
+mongo_uri = os.getenv("MONGO_URI")
+if not mongo_uri:
+    raise ValueError("MONGO_URI is not set in the environment variables")
+
+client = MongoClient(mongo_uri)
 db = client.newsdb
 collection = db.articles
 
@@ -25,6 +34,10 @@ def scrape_ycombinator():
         return
 
     articles = soup.find_all('tr', class_='athing')
+    if not articles:
+        logger.warning("No articles found on Hacker News.")
+        return
+
     new_articles = []
 
     for article in articles:
@@ -52,7 +65,7 @@ def scrape_ycombinator():
             logger.info(f"Duplicate found for article '{title}', skipping.")
             continue
 
-        # Try fetching content from the article link
+        # Fetch the content from the article link
         article_content = fetch_article_content(link)
 
         # Insert the article into the database
@@ -83,16 +96,12 @@ def fetch_article_content(url):
 
             soup = BeautifulSoup(response.text, 'html.parser')
 
-            # Extract title, date, and main content
-            title = soup.find('h1').get_text(strip=True) if soup.find('h1') else 'No Title'
-            date = soup.find('time').get_text(strip=True) if soup.find('time') else 'No Date'
-
-            # Get the main article content from <p> tags or code blocks
+            # Extract main content
             paragraphs = soup.find_all(['p', 'div', 'pre'])
             content = "\n".join([p.get_text(strip=True) for p in paragraphs])
 
             if not content:
-                content = soup.get_text(strip=True)[:1000]  # Fallback
+                content = soup.get_text(strip=True)[:1000]  # Fallback to page text if no content
 
             return content if content else "No content available"
         except requests.exceptions.HTTPError as e:
