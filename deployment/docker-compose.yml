@@ -9,9 +9,9 @@ services:
     networks:
       - app-network
     environment:
-      - MONGO_URI=${MONGO_URI}  # Use the MongoDB Atlas URI from your environment variables
+      - MONGO_URI=${MONGO_URI}  # Use the MongoDB Atlas URI from environment variables
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - PYTHONPATH=/app  # Ensures the correct path for Python imports
+      - PYTHONPATH=/app  # Ensures correct path for Python imports
     depends_on:
       - scheduler  # Backend depends on the scheduler service
 

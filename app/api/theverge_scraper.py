@@ -68,7 +68,7 @@ def scrape_theverge():
 
         date = datetime.now()
 
-        # Properly check if collection exists before querying
+        # Check if collection exists before querying
         if collection is not None and collection.find_one({'title': title, 'source_url': link}):
             logger.info(f"Duplicate found for article '{title}', skipping.")
             continue

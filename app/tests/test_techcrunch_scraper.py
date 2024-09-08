@@ -3,7 +3,6 @@ from unittest.mock import patch, MagicMock
 import sys
 import os
 
-# Adjust the path for the test to find the 'api' directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../app')))
 
 from api.techcrunch_scraper import scrape_techcrunch, scrape_article_content

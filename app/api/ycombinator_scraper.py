@@ -15,7 +15,6 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Set up MongoDB connection using MongoDB Atlas, but handle case when MONGO_URI is not available for testing
 mongo_uri = os.getenv("MONGO_URI")
 if mongo_uri:
     client = MongoClient(mongo_uri)
@@ -23,7 +22,7 @@ if mongo_uri:
     collection = db.articles
 else:
     logger.info("No MONGO_URI found. Skipping MongoDB connection (useful for testing).")
-    collection = None  # Set collection to None during tests or if MongoDB is not required.
+    collection = None  # Set collection to None during tests
 
 # Domain-specific scrapers
 def scrape_medium(soup):

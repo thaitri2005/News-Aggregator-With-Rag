@@ -5,4 +5,4 @@ apscheduler==3.10.1
 Flask-CORS==3.0.10
 google-generativeai
 bs4
-python-dotenv  # Add this line
+python-dotenv

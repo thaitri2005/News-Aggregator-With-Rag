@@ -7,7 +7,6 @@ import sys
 from bson import ObjectId
 import os
 
-# Adjust the path for the test to find the 'api' directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../app')))
 
 # Mock the loading of the environment variables

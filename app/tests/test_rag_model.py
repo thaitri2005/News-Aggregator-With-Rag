@@ -4,7 +4,6 @@ from bson import ObjectId
 import sys
 import os
 
-# Adjust the path for the test to find the 'api' directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../app')))
 
 # Import the functions from rag_model.py

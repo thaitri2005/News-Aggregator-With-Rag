@@ -6,7 +6,7 @@ import logging
 # Load the environment variables from the .env file
 load_dotenv()
 
-# Now you can safely access the environment variables
+# Safely access the environment variables
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY is not set")

@@ -3,7 +3,6 @@ from unittest.mock import patch, MagicMock
 import sys
 import os
 
-# Add 'app' to the system path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../app')))
 
 from api.ycombinator_scraper import scrape_ycombinator, fetch_article_content

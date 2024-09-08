@@ -3,7 +3,6 @@ from unittest.mock import patch, MagicMock
 import sys
 import os
 
-# Adjust the path to include the directory containing 'api' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../app')))
 
 # Mock the loading of the environment variables

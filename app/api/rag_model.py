@@ -1,10 +1,10 @@
 import sys
 import os
 from bson import ObjectId
-# Adjust the path to make sure the correct reference is made
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from database import db  # This will correctly import from the parent directory
+from database import db
 
 def convert_objectid_to_str(doc):
     if isinstance(doc, dict):

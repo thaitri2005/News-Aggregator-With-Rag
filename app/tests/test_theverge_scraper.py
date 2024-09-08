@@ -4,7 +4,6 @@ from datetime import datetime
 import sys
 import os
 
-# Adjust the path for the test to find the 'api' directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../app')))
 
 # Import the scrape_theverge and fetch_article_content from the correct module
