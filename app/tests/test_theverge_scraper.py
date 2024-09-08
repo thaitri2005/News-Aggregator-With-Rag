@@ -23,7 +23,7 @@ class TestTheVergeScraper(unittest.TestCase):
         """
         mock_article_html = """
         <html>
-            <div class="duet--article--article-body-component-container">
+            <div class="c-entry-content">
                 <p>This is the content of the test article.</p>
             </div>
         </html>
@@ -42,8 +42,8 @@ class TestTheVergeScraper(unittest.TestCase):
         mock_get.side_effect = [mock_response_homepage, mock_response_article]
 
         # Mock the MongoDB collection to avoid actual database interactions
-        mock_collection.find_one.return_value = None
-        mock_collection.insert_many.return_value = None
+        mock_collection.find_one.return_value = None  # No duplicates
+        mock_collection.insert_many.return_value = None  # Simulate successful insertion
 
         # Call the function being tested
         scrape_theverge()
@@ -55,7 +55,7 @@ class TestTheVergeScraper(unittest.TestCase):
         mock_get.assert_any_call("https://www.theverge.com/test-article", timeout=10)
 
         # Check that the article was inserted into the database
-        self.assertTrue(mock_collection.insert_many.called)
+        self.assertTrue(mock_collection.insert_many.called, "The insert_many method was not called")
         inserted_data = mock_collection.insert_many.call_args[0][0][0]
         self.assertEqual(inserted_data['title'], 'Test Article')
         self.assertEqual(inserted_data['source_url'], 'https://www.theverge.com/test-article')
@@ -65,7 +65,7 @@ class TestTheVergeScraper(unittest.TestCase):
         # Mocking the response for article content
         mock_html = """
         <html>
-            <div class="duet--article--article-body-component-container">
+            <div class="c-entry-content">
                 <p>This is the content of the test article.</p>
             </div>
         </html>

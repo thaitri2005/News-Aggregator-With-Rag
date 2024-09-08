@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
 from dotenv import load_dotenv
+import json
 
 # Load environment variables from .env file
 load_dotenv()
@@ -94,26 +95,40 @@ def scrape_theverge():
 
 def fetch_article_content(link):
     """
-    Fetch the full content of the article by visiting its URL.
+    Fetch the full content of the article by visiting its URL and parsing 
+    it from the <script type="application/ld+json"> section.
     """
     try:
         response = requests.get(link, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Log part of the fetched article HTML for debugging
+        # Log the URL for reference
         logger.info(f"Fetching content from {link}")
-        logger.info(soup.prettify()[:500])  # Log the first 500 characters of the page content
         
-        # The main content is often in a specific div or class, update based on actual structure
-        content_div = soup.find('div', class_='c-entry-content')  # Updated the class for The Verge article content
-        if content_div:
-            paragraphs = content_div.find_all('p')
-            full_content = "\n".join([p.get_text(strip=True) for p in paragraphs])
-            return full_content
-        else:
-            logger.warning(f"No content found in the expected div for {link}")
+        # Find the <script> tag containing the article's JSON-LD data
+        ld_json_script = soup.find('script', type='application/ld+json')
+        if not ld_json_script:
+            logger.warning(f"No JSON-LD script tag found for {link}")
             return None
+        
+        # Parse the JSON content
+        try:
+            article_data = json.loads(ld_json_script.string)
+        except json.JSONDecodeError as e:
+            logger.error(f"Error decoding JSON from {link}: {e}")
+            return None
+
+        # Extract the article body from the JSON
+        article_body = article_data.get("articleBody", "")
+        if not article_body:
+            logger.warning(f"No article body found in JSON for {link}")
+            return None
+        
+        # Optionally log part of the content for verification
+        logger.info(f"Article body found for {link}: {article_body[:200]}...")  # Log first 200 chars
+        
+        return article_body
     except requests.RequestException as e:
         logger.error(f"Error fetching article content from {link}: {e}")
         return None
