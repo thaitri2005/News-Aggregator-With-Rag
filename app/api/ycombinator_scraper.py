@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
 import os
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -22,6 +23,69 @@ if not mongo_uri:
 client = MongoClient(mongo_uri)
 db = client.newsdb
 collection = db.articles
+
+# Domain-specific scrapers
+def scrape_medium(soup):
+    content = soup.find('article')
+    if content:
+        return "\n".join([p.get_text(strip=True) for p in content.find_all('p')])
+    return "No content available"
+
+def scrape_github(soup):
+    content = soup.find('article')
+    if content:
+        return content.get_text(strip=True)
+    return "No content available"
+
+def scrape_generic(soup):
+    paragraphs = soup.find_all(['p', 'div', 'pre', 'article'])
+    content = "\n".join([p.get_text(strip=True) for p in paragraphs])
+    if not content:
+        content = soup.get_text(strip=True)[:1000]  # Fallback to page text if no content
+    return content if content else "No content available"
+
+# Mapping of domain-specific scrapers
+domain_scrapers = {
+    "medium.com": scrape_medium,
+    "github.com": scrape_github,
+}
+
+def fetch_article_content(url):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    }
+    
+    retries = 3
+    for attempt in range(retries):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()  # Raise an HTTPError for bad responses (4xx, 5xx)
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Detect the domain
+            domain = urlparse(url).netloc
+
+            # Use a domain-specific scraper if available
+            if domain in domain_scrapers:
+                logger.info(f"Using domain-specific scraper for {domain}")
+                return domain_scrapers[domain](soup)
+
+            # Otherwise, use the generic scraper
+            logger.info(f"Using generic scraper for {domain}")
+            return scrape_generic(soup)
+            
+        except requests.exceptions.HTTPError as e:
+            if attempt < retries - 1:
+                logger.error(f"Error fetching article content from {url}: {e}. Retrying...")
+                time.sleep(2)  # Wait before retrying
+                continue
+            else:
+                logger.error(f"Error fetching article content from {url}: {e}")
+                return "No content available"
+        except requests.RequestException as e:
+            logger.error(f"Request error for {url}: {e}")
+            return "No content available"
 
 def scrape_ycombinator():
     base_url = "https://news.ycombinator.com/"
@@ -82,39 +146,6 @@ def scrape_ycombinator():
         logger.info(f"Inserted {len(new_articles)} new articles from Hacker News.")
     else:
         logger.info("No new articles were added from Hacker News.")
-
-def fetch_article_content(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-    }
-    
-    retries = 3
-    for attempt in range(retries):
-        try:
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()  # Raise an HTTPError for bad responses (4xx, 5xx)
-
-            soup = BeautifulSoup(response.text, 'html.parser')
-
-            # Extract main content
-            paragraphs = soup.find_all(['p', 'div', 'pre'])
-            content = "\n".join([p.get_text(strip=True) for p in paragraphs])
-
-            if not content:
-                content = soup.get_text(strip=True)[:1000]  # Fallback to page text if no content
-
-            return content if content else "No content available"
-        except requests.exceptions.HTTPError as e:
-            if attempt < retries - 1:
-                logger.error(f"Error fetching article content from {url}: {e}. Retrying...")
-                time.sleep(2)  # Wait before retrying
-                continue
-            else:
-                logger.error(f"Error fetching article content from {url}: {e}")
-                return "No content available"
-        except requests.RequestException as e:
-            logger.error(f"Request error for {url}: {e}")
-            return "No content available"
 
 if __name__ == "__main__":
     scrape_ycombinator()
