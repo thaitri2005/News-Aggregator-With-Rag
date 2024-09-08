@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Delay start of scheduler tasks
-time.sleep(10)
+time.sleep(5)
 
 # Scheduler job definitions
 def job_techcrunch():
