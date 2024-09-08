@@ -21,12 +21,14 @@ class TestTheVergeScraper(unittest.TestCase):
             <a class="text-black hover:text-blurple" href="/test-article">Test Article</a>
         </html>
         """
-        mock_article_html = """
-        <html>
-            <div class="c-entry-content">
-                <p>This is the content of the test article.</p>
-            </div>
-        </html>
+        mock_article_json_ld = """
+        <script type="application/ld+json">
+        {
+            "@context": "http://schema.org",
+            "@type": "NewsArticle",
+            "articleBody": "This is the content of the test article."
+        }
+        </script>
         """
 
         # Set up the mock responses for both homepage and article content
@@ -36,7 +38,7 @@ class TestTheVergeScraper(unittest.TestCase):
 
         mock_response_article = MagicMock()
         mock_response_article.status_code = 200
-        mock_response_article.text = mock_article_html
+        mock_response_article.text = mock_article_json_ld
 
         # Set side_effect to return the appropriate response for each call
         mock_get.side_effect = [mock_response_homepage, mock_response_article]
@@ -59,20 +61,23 @@ class TestTheVergeScraper(unittest.TestCase):
         inserted_data = mock_collection.insert_many.call_args[0][0][0]
         self.assertEqual(inserted_data['title'], 'Test Article')
         self.assertEqual(inserted_data['source_url'], 'https://www.theverge.com/test-article')
+        self.assertEqual(inserted_data['content'], 'This is the content of the test article.')
 
     @patch('api.theverge_scraper.requests.get')
     def test_fetch_article_content(self, mock_get):
-        # Mocking the response for article content
-        mock_html = """
-        <html>
-            <div class="c-entry-content">
-                <p>This is the content of the test article.</p>
-            </div>
-        </html>
+        # Mocking the response for article content using JSON-LD
+        mock_article_json_ld = """
+        <script type="application/ld+json">
+        {
+            "@context": "http://schema.org",
+            "@type": "NewsArticle",
+            "articleBody": "This is the content of the test article."
+        }
+        </script>
         """
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.text = mock_html
+        mock_response.text = mock_article_json_ld
         mock_get.return_value = mock_response
 
         content = fetch_article_content("https://www.theverge.com/test-article")
