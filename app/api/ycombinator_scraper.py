@@ -15,14 +15,15 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Set up MongoDB connection using MongoDB Atlas
+# Set up MongoDB connection using MongoDB Atlas, but handle case when MONGO_URI is not available for testing
 mongo_uri = os.getenv("MONGO_URI")
-if not mongo_uri:
-    raise ValueError("MONGO_URI is not set in the environment variables")
-
-client = MongoClient(mongo_uri)
-db = client.newsdb
-collection = db.articles
+if mongo_uri:
+    client = MongoClient(mongo_uri)
+    db = client.newsdb
+    collection = db.articles
+else:
+    logger.info("No MONGO_URI found. Skipping MongoDB connection (useful for testing).")
+    collection = None  # Set collection to None during tests or if MongoDB is not required.
 
 # Domain-specific scrapers
 def scrape_medium(soup):
@@ -124,8 +125,8 @@ def scrape_ycombinator():
         
         date = datetime.now()  # Hacker News doesn't provide an explicit date, so we use the current time.
 
-        # Check for duplicate articles
-        if collection.find_one({'title': title, 'source_url': link}):
+        # Explicitly check if collection is not None
+        if collection is not None and collection.find_one({'title': title, 'source_url': link}):
             logger.info(f"Duplicate found for article '{title}', skipping.")
             continue
 
@@ -141,7 +142,7 @@ def scrape_ycombinator():
             'source': 'Hacker News'
         })
 
-    if new_articles:
+    if new_articles and collection is not None:
         collection.insert_many(new_articles)
         logger.info(f"Inserted {len(new_articles)} new articles from Hacker News.")
     else:
