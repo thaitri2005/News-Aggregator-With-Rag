@@ -3,8 +3,10 @@ from database import articles_collection, summaries_collection, queries_collecti
 from bson.objectid import ObjectId
 from .gemini_integration import summarize_article
 from .rag_model import retrieve_articles
+import logging
 
 api = Blueprint('api', __name__)
+logger = logging.getLogger(__name__)
 
 # Helper function to convert ObjectId to string
 def convert_objectid_to_str(doc):
@@ -75,13 +77,22 @@ def add_query():
 @api.route('/summarize', methods=['POST'])
 def summarize():
     data = request.json
-    article_text = data.get("article_text")
+    article_text = data.get("article_text")    
     if not article_text:
+        logger.error("No article text provided.")
         return jsonify({"error": "No article text provided"}), 400
 
-    summary = summarize_article(article_text)
-    return jsonify({"summary": summary}), 200
+    try:
+        # Call the summarization function
+        summary = summarize_article(article_text)
+        logger.info(f"Generated summary: {summary}")
+        return jsonify({"summary": summary}), 200
+    except Exception as e:
+        logger.error(f"An error occurred during summarization: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
+
+# Retrieve articles based on a search query
 @api.route('/retrieve', methods=['POST'])
 def retrieve():
     try:
