@@ -93,10 +93,14 @@ function App() {
         {articles.length > 0 ? (
           articles.map((article) => (
             <div key={article._id} className={`article ${summaryPanelOpen ? 'shifted' : ''}`}>
-              <h2>{article.title}</h2>
-              <p>Date: {new Date(article.date).toLocaleDateString()}</p>
-              <a href={article.source_url} target="_blank" rel="noopener noreferrer">Read More</a>
-              <button className="summary-button" onClick={() => fetchSummary(article)}>{'<'}</button>
+              <div className="article-content">
+                <h2>{article.title}</h2>
+                <p>Date: {new Date(article.date).toLocaleDateString()}</p>
+                <a href={article.source_url} target="_blank" rel="noopener noreferrer">Read More</a>
+              </div>
+              <div className="summary-button-container">
+                <button className="summary-button" onClick={() => fetchSummary(article)}>{'<'}</button>
+              </div>
             </div>
           ))
         ) : (

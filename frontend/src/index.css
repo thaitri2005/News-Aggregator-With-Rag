@@ -42,13 +42,21 @@ button:hover {
 }
 
 .article {
+  display: flex;
+  justify-content: space-between;
   background-color: white;
-  padding: 20px;
   margin: 10px 0;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  position: relative;
   transition: transform 0.3s ease;
+  position: relative;
+  height: 100%; /* Ensure article height is flexible */
+  padding: 0; /* Remove padding */
+}
+
+.article-content {
+  flex-grow: 1;
+  padding: 20px; /* Add padding to content instead of article */
 }
 
 .article h2 {
@@ -68,30 +76,33 @@ button:hover {
   text-decoration: underline;
 }
 
+/* Summary button container */
+.summary-button-container {
+  display: flex;
+  align-items: stretch; /* Ensure button stretches to full height */
+  padding: 0; /* No padding for the button container */
+}
+
 /* Summary button */
 .summary-button {
-  position: absolute;
-  top: 50%;
-  right: 10px;  /* Adjusted to be inside the article container */
-  transform: translateY(-50%);
   background-color: #007BFF;
   color: white;
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 100%; /* Make the button take up the full height of the article */
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 5px;
+  border-radius: 0; /* Remove any border radius */
 }
 
 .summary-button:hover {
   background-color: #0056b3;
 }
 
-.shifted .summary-button {
-  right: 10px; /* Keep button inside even when panel is open */
+.shifted {
+  transform: translateX(-100px); /* Shifts articles when the summary panel is open */
 }
 
 /* Summary panel */
