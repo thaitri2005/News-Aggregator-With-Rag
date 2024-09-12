@@ -1,12 +1,15 @@
+/* General layout */
 body {
   font-family: Arial, sans-serif;
   background-color: #f5f5f5;
   margin: 0;
   padding: 20px;
+  overflow-x: hidden; /* Prevents horizontal scrolling */
 }
 
 h1 {
   color: #333;
+  text-align: center;
 }
 
 input {
@@ -30,10 +33,12 @@ button:hover {
   background-color: #0056b3;
 }
 
+/* Articles layout */
 .articles-container {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 20px;
 }
 
 .article {
@@ -67,13 +72,12 @@ button:hover {
 .summary-button {
   position: absolute;
   top: 50%;
-  right: -100px;
+  right: 10px;  /* Adjusted to be inside the article container */
   transform: translateY(-50%);
   background-color: #007BFF;
   color: white;
   border: none;
-  border-radius: 0;
-  width: 50px;
+  width: 40px;
   height: 40px;
   cursor: pointer;
   display: flex;
@@ -86,8 +90,8 @@ button:hover {
   background-color: #0056b3;
 }
 
-.shifted {
-  transform: translateX(-100px); /* Shifts articles when the summary panel is open */
+.shifted .summary-button {
+  right: 10px; /* Keep button inside even when panel is open */
 }
 
 /* Summary panel */
@@ -108,6 +112,7 @@ button:hover {
   right: 0;
 }
 
+/* Close panel button */
 .close-panel-button {
   position: absolute;
   left: -60px;
@@ -115,7 +120,6 @@ button:hover {
   background-color: #007BFF;
   color: white;
   border: none;
-  border-radius: 0;
   width: 50px;
   height: 40px;
   cursor: pointer;
