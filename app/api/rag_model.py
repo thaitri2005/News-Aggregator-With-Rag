@@ -1,45 +1,129 @@
 # app/api/rag_model.py
-import sys
+
 import os
 import logging
+from pymongo import TEXT
+from pymongo.errors import PyMongoError
+import re
+
 from bson import ObjectId
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
+from utils import convert_objectid_to_str
 from database import db
 
 logger = logging.getLogger(__name__)
 
-def convert_objectid_to_str(doc):
-    if isinstance(doc, dict):
-        for key, value in doc.items():
-            if isinstance(value, ObjectId):
-                doc[key] = str(value)
-    return doc
-
 def create_text_index():
     """
-    Creates a text index on the title and content fields of the articles collection.
+    Ensures that a text index on the 'title' and 'content' fields of the articles collection exists.
     """
     try:
         articles_collection = db.get_collection('articles')
-        articles_collection.create_index([("title", "text"), ("content", "text")])
-        logger.info("Text index created on 'title' and 'content' fields.")
-    except Exception as e:
-        logger.exception("Failed to create text index.")
+        # Get existing indexes
+        existing_indexes = articles_collection.index_information()
+        # Define the desired index fields
+        desired_fields = {'title', 'content'}
+        # Check if an index with the same fields exists
+        index_exists = False
+        for index_name, index_info in existing_indexes.items():
+            # Check if the index is a text index
+            if index_info.get('weights'):
+                index_fields = set(index_info['weights'].keys())
+                if index_fields == desired_fields:
+                    index_exists = True
+                    logger.info(f"Text index on 'title' and 'content' already exists: {index_name}")
+                    break
+        if not index_exists:
+            articles_collection.create_index(
+                [("title", TEXT), ("content", TEXT)],
+                name='title_content_text_index',
+                default_language='english'
+            )
+            logger.info("Text index created on 'title' and 'content' fields.")
+        else:
+            logger.info("Text index on 'title' and 'content' already exists.")
+    except PyMongoError as e:
+        logger.exception(f"Failed to create text index: {e}")
 
-def retrieve_articles(query, page=1, limit=5):
+def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc', filters=None):
+    """
+    Retrieves articles based on the search query and optional filters.
+
+    Parameters:
+        query (str): The search query string.
+        page (int): The page number for pagination.
+        limit (int): The number of articles per page.
+        sort_by (str): The field to sort by ('score', 'date').
+        order (str): Sort order ('asc' or 'desc').
+        filters (dict): Additional filters (e.g., date range, source).
+
+    Returns:
+        list: A list of articles matching the search criteria.
+    """
     try:
         articles_collection = db.get_collection('articles')
-        skip = (page - 1) * limit
-        search_results = articles_collection.find(
-            {"$text": {"$search": query}},
-            {"score": {"$meta": "textScore"}}
-        ).sort([("score", {"$meta": "textScore"})]).skip(skip).limit(limit)
 
-        return [convert_objectid_to_str(result) for result in search_results]
+        # Validate and sanitize input parameters
+        if not isinstance(query, str) or not query.strip():
+            logger.error("Invalid query parameter.")
+            return []
+
+        try:
+            page = int(page)
+            limit = int(limit)
+            if page < 1 or limit < 1:
+                raise ValueError
+        except ValueError:
+            logger.error("Page and limit must be positive integers.")
+            return []
+
+        skip = (page - 1) * limit
+
+        # Sanitize the query to prevent injection attacks
+        sanitized_query = re.sub(r'[^\w\s]', '', query)
+
+        # Build the MongoDB query
+        mongo_query = {"$text": {"$search": sanitized_query}}
+
+        # Apply additional filters if provided
+        if filters:
+            mongo_query.update(filters)
+
+        # Define the projection
+        projection = {
+            "score": {"$meta": "textScore"},
+            "title": 1,
+            "content": 1,
+            "date": 1,
+            "source_url": 1,
+            "source": 1
+        }
+
+        # Define the sort order
+        if sort_by == 'date':
+            sort_field = 'date'
+        else:
+            sort_field = 'score'
+
+        sort_order = -1 if order == 'desc' else 1
+
+        # Execute the query
+        search_results = articles_collection.find(
+            mongo_query,
+            projection
+        ).sort([(sort_field, {"$meta": "textScore"} if sort_field == 'score' else sort_order)]).skip(skip).limit(limit)
+
+        articles = []
+        for result in search_results:
+            article = convert_objectid_to_str(result)
+            articles.append(article)
+
+        return articles
+
+    except PyMongoError as e:
+        logger.exception(f"Failed to retrieve articles: {e}")
+        return []
     except Exception as e:
-        logger.exception("Failed to retrieve articles.")
+        logger.exception(f"An unexpected error occurred: {e}")
         return []
 
 if __name__ == "__main__":

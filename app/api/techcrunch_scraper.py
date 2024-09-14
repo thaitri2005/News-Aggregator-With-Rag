@@ -25,9 +25,12 @@ def scrape_article_content(url):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        content_div = soup.find('div', class_='article-content')
+        # Fetch content from updated HTML structure
+        content_div = soup.find('div', class_='entry-content')
         if content_div:
-            content = content_div.get_text(separator="\n", strip=True)
+            # Extract all paragraphs within the article content
+            paragraphs = content_div.find_all('p')
+            content = "\n".join([p.get_text(strip=True) for p in paragraphs])
             return content
         else:
             logger.warning(f"Content not found at {url}")

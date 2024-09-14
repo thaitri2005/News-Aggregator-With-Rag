@@ -1,4 +1,5 @@
 # app/api/routes.py
+
 from flask import Blueprint, jsonify, request, abort
 from database import articles_collection, summaries_collection, queries_collection
 from bson.objectid import ObjectId
@@ -6,22 +7,37 @@ from .gemini_integration import summarize_article
 from .rag_model import retrieve_articles
 import logging
 
+from utils import convert_objectid_to_str  # Import from utils.py
+from marshmallow import Schema, fields, ValidationError
+
 api = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
 
-# Helper function to convert ObjectId to string
-def convert_objectid_to_str(doc):
-    if isinstance(doc, dict):
-        for key, value in doc.items():
-            if isinstance(value, ObjectId):
-                doc[key] = str(value)
-    return doc
+# Schemas for input validation using marshmallow
+class ArticleSchema(Schema):
+    title = fields.Str(required=True)
+    content = fields.Str(required=True)
+    date = fields.DateTime(required=True)
+    source_url = fields.Url(required=True)
+
+class QuerySchema(Schema):
+    query = fields.Str(required=True)
+    response = fields.Str(required=True)
+
+class RetrieveSchema(Schema):
+    query = fields.Str(required=True)
+    page = fields.Int(missing=1, validate=lambda n: n > 0)
+    limit = fields.Int(missing=5, validate=lambda n: n > 0)
+    sort_by = fields.Str(missing='score', validate=lambda x: x in ['score', 'date'])
+    order = fields.Str(missing='desc', validate=lambda x: x in ['asc', 'desc'])
 
 # Get all articles
 @api.route('/articles', methods=['GET'])
 def get_articles():
     try:
-        articles = list(articles_collection.find({}, {"_id": 1, "title": 1, "content": 1, "date": 1, "source_url": 1}))
+        articles = list(articles_collection.find({}, {
+            "_id": 1, "title": 1, "content": 1, "date": 1, "source_url": 1, "source": 1
+        }))
         articles = [convert_objectid_to_str(article) for article in articles]
         return jsonify(articles), 200
     except Exception as e:
@@ -33,31 +49,37 @@ def get_articles():
 def get_article(id):
     try:
         article_id = ObjectId(id)
-    except Exception as e:
+        article = articles_collection.find_one({"_id": article_id})
+        if article:
+            article = convert_objectid_to_str(article)
+            return jsonify(article), 200
+        else:
+            logger.warning(f"Article not found for ID: {id}")
+            abort(404, description="Article not found.")
+    except (ValueError, TypeError) as e:
         logger.error(f"Invalid article ID: {str(e)}")
         abort(400, description="Invalid article ID.")
-
-    article = articles_collection.find_one({"_id": article_id})
-    if article:
-        article = convert_objectid_to_str(article)
-        return jsonify(article), 200
-    else:
-        logger.warning(f"Article not found for ID: {id}")
-        abort(404, description="Article not found.")
+    except Exception as e:
+        logger.exception("An unexpected error occurred.")
+        abort(500, description="Internal server error.")
 
 # Add a new article
 @api.route('/articles', methods=['POST'])
 def add_article():
-    data = request.json
     try:
-        articles_collection.insert_one({
-            "title": data["title"],
-            "content": data["content"],
-            "date": data["date"],
-            "source_url": data["source_url"]
-        })
+        data = request.get_json()
+        if not data:
+            logger.error("No input data provided.")
+            abort(400, description="No input data provided.")
+
+        article_schema = ArticleSchema()
+        validated_data = article_schema.load(data)
+        articles_collection.insert_one(validated_data)
         logger.info("Article added successfully.")
         return jsonify({"message": "Article added successfully"}), 201
+    except ValidationError as ve:
+        logger.error(f"Validation error: {ve.messages}")
+        abort(400, description=ve.messages)
     except Exception as e:
         logger.exception("Failed to add new article.")
         abort(500, description="Internal server error.")
@@ -86,14 +108,20 @@ def get_queries():
 # Add a new query
 @api.route('/queries', methods=['POST'])
 def add_query():
-    data = request.json
     try:
-        queries_collection.insert_one({
-            "query": data["query"],
-            "response": data["response"]
-        })
+        data = request.get_json()
+        if not data:
+            logger.error("No input data provided.")
+            abort(400, description="No input data provided.")
+
+        query_schema = QuerySchema()
+        validated_data = query_schema.load(data)
+        queries_collection.insert_one(validated_data)
         logger.info("Query added successfully.")
         return jsonify({"message": "Query added successfully"}), 201
+    except ValidationError as ve:
+        logger.error(f"Validation error: {ve.messages}")
+        abort(400, description=ve.messages)
     except Exception as e:
         logger.exception("Failed to add new query.")
         abort(500, description="Internal server error.")
@@ -101,13 +129,13 @@ def add_query():
 # Summarize article
 @api.route('/summarize', methods=['POST'])
 def summarize():
-    data = request.json
-    article_text = data.get("article_text")
-    if not article_text:
-        logger.error("No article text provided.")
-        abort(400, description="No article text provided.")
-
     try:
+        data = request.get_json()
+        article_text = data.get("article_text")
+        if not article_text:
+            logger.error("No article text provided.")
+            abort(400, description="No article text provided.")
+
         # Call the summarization function
         summary = summarize_article(article_text)
         logger.info("Article summarized successfully.")
@@ -120,20 +148,28 @@ def summarize():
 @api.route('/retrieve', methods=['POST'])
 def retrieve():
     try:
-        data = request.json
-        query = data.get('query')
-        page = int(data.get('page', 1))
-        limit = int(data.get('limit', 5))
+        data = request.get_json()
+        if not data:
+            logger.error("No input data provided.")
+            abort(400, description="No input data provided.")
 
-        if not query:
-            logger.error("Query parameter is required.")
-            abort(400, description="Query parameter is required.")
+        retrieve_schema = RetrieveSchema()
+        validated_data = retrieve_schema.load(data)
 
-        articles = retrieve_articles(query, page, limit)
+        query = validated_data.get('query')
+        page = validated_data.get('page')
+        limit = validated_data.get('limit')
+        sort_by = validated_data.get('sort_by')
+        order = validated_data.get('order')
+
+        articles = retrieve_articles(query, page, limit, sort_by, order)
         if not articles:
             logger.info("No articles found matching the query.")
             return jsonify({"message": "No articles found"}), 404
         return jsonify(articles), 200
+    except ValidationError as ve:
+        logger.error(f"Validation error: {ve.messages}")
+        abort(400, description=ve.messages)
     except Exception as e:
         logger.exception("An error occurred during article retrieval.")
         abort(500, description="Internal server error.")
