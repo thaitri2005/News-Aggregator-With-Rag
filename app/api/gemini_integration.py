@@ -21,11 +21,11 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 def summarize_article(article_text):
-    # Update generation config for concise and optimized output
+    # Update generation config for optimized output
     generation_config = {
-        "temperature": 0.7,
-        "top_p": 0.9,
-        "top_k": 50,
+        "temperature": 0.5,
+        "top_p": 0.8,
+        "top_k": 40,
         "max_output_tokens": 512,
         "response_mime_type": "text/plain",
     }
