@@ -10,7 +10,7 @@ import time
 logger = logging.getLogger(__name__)
 
 # Delay start of scheduler tasks
-time.sleep(5)
+# time.sleep(5)
 
 # Scheduler job definitions
 def job_techcrunch():

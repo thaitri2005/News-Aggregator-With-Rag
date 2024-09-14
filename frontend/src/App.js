@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import './index.css';
+import {
+  Container, TextField, Button, CircularProgress, Box, Typography, Card, CardContent, CardActions, Link,
+} from '@mui/material';
+import './App.css'; // Assuming your CSS
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');  // State to store the search query
@@ -30,35 +33,28 @@ function App() {
         limit: 5  // You can set any limit here
       });
       setArticles(response.data);
-      setLoading(false);
     } catch (error) {
       setError('An error occurred while fetching the articles');
+    } finally {
       setLoading(false);
     }
   };
 
-  // Function to handle pressing "Enter" key in search
-  const handleKeyDown = (event) => {
-    if (event.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  // Function to fetch summary for an article when the "<" button is clicked
+  // Function to fetch summary for an article when "<" button is clicked
   const fetchSummary = async (article) => {
-    setLoading(true); // Show loading indicator when fetching summary
+    setLoading(true);
     try {
       const response = await axios.post('http://localhost:5000/api/summarize', {
-        article_text: article.content,  // Assuming article.content is passed for summarization
+        article_text: article.content,
       });
       setSelectedArticle({
         ...article,
         summary: response.data.summary || 'No summary available',
       });
-      setLoading(false);
-      setSummaryPanelOpen(true); // Open the summary panel when the summary is ready
+      setSummaryPanelOpen(true);
     } catch (error) {
       setError('Failed to load summary');
+    } finally {
       setLoading(false);
     }
   };
@@ -70,55 +66,76 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      <h1>News Aggregator</h1>
-      {/* Search Input Field */}
-      <input 
-        type="text" 
-        value={searchQuery} 
-        onChange={handleSearchInput} 
-        onKeyDown={handleKeyDown} 
-        placeholder="Search for news articles..." 
-      />
-      <button onClick={handleSearch}>Search</button>
+    <Container maxWidth="md" className="app-container">
+      <Box my={4}>
+        <Typography variant="h4" align="center" color="textPrimary" gutterBottom>
+          News Aggregator
+        </Typography>
 
-      {/* Display loading state */}
-      {loading && <p>Loading...</p>}
+        {/* Search Input Field */}
+        <Box display="flex" justifyContent="center" mb={2}>
+          <TextField
+            value={searchQuery}
+            onChange={handleSearchInput}
+            variant="outlined"
+            placeholder="Search for news articles..."
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            style={{ width: '60%' }}
+          />
+          <Button
+            onClick={handleSearch}
+            variant="contained"
+            color="primary"
+            style={{ marginLeft: '10px' }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Search'}
+          </Button>
+        </Box>
 
-      {/* Display error message if any */}
-      {error && <p>{error}</p>}
+        {/* Error Message */}
+        {error && <Typography color="error" align="center">{error}</Typography>}
 
-      {/* Display list of articles */}
-      <div className="articles-container">
-        {articles.length > 0 ? (
-          articles.map((article) => (
-            <div key={article._id} className={`article ${summaryPanelOpen ? 'shifted' : ''}`}>
-              <div className="article-content">
-                <h2>{article.title}</h2>
-                <p>Date: {new Date(article.date).toLocaleDateString()}</p>
-                <a href={article.source_url} target="_blank" rel="noopener noreferrer">Read More</a>
-              </div>
-              <div className="summary-button-container">
-                <button className="summary-button" onClick={() => fetchSummary(article)}>{'<'}</button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p>No articles found</p>
-        )}
-      </div>
+        {/* Articles List */}
+        <Box>
+          {articles.length > 0 ? (
+            articles.map((article) => (
+              <Card key={article._id} className="article-card">
+                <CardContent>
+                  <Typography variant="h6" color="primary">{article.title}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {new Date(article.date).toLocaleDateString()}
+                  </Typography>
+                  <Link href={article.source_url} target="_blank" rel="noopener">
+                    Read More
+                  </Link>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    size="small"
+                    color="primary"
+                    onClick={() => fetchSummary(article)}
+                  >
+                    View Summary
+                  </Button>
+                </CardActions>
+              </Card>
+            ))
+          ) : (
+            <Typography>No articles found</Typography>
+          )}
+        </Box>
+      </Box>
 
       {/* Summary Panel */}
-      <div className={`summary-panel ${summaryPanelOpen ? 'open' : ''}`}>
-        <button className="close-panel-button" onClick={closeSummaryPanel}>{'>'}</button>
-        {selectedArticle && (
-          <>
-            <h3>Summary for: {selectedArticle.title}</h3>
-            <p>{selectedArticle.summary}</p>
-          </>
-        )}
-      </div>
-    </div>
+      {summaryPanelOpen && selectedArticle && (
+        <Box className="summary-panel">
+          <Button onClick={closeSummaryPanel}>Close</Button>
+          <Typography variant="h6">{selectedArticle.title}</Typography>
+          <Typography variant="body1">{selectedArticle.summary}</Typography>
+        </Box>
+      )}
+    </Container>
   );
 }
 
