@@ -1,3 +1,4 @@
+# app/api/scheduler.py
 import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
 from techcrunch_scraper import scrape_techcrunch
@@ -5,8 +6,7 @@ from ycombinator_scraper import scrape_ycombinator
 from theverge_scraper import scrape_theverge
 import time
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Set up logging
 logger = logging.getLogger(__name__)
 
 # Delay start of scheduler tasks
@@ -15,15 +15,27 @@ time.sleep(5)
 # Scheduler job definitions
 def job_techcrunch():
     logger.info("Running TechCrunch scraper...")
-    scrape_techcrunch()
-    
+    try:
+        scrape_techcrunch()
+        logger.info("TechCrunch scraper completed.")
+    except Exception as e:
+        logger.exception("TechCrunch scraper failed.")
+
 def job_ycombinator():
     logger.info("Running YCombinator scraper...")
-    scrape_ycombinator()
-    
+    try:
+        scrape_ycombinator()
+        logger.info("YCombinator scraper completed.")
+    except Exception as e:
+        logger.exception("YCombinator scraper failed.")
+
 def job_theverge():
     logger.info("Running The Verge scraper...")
-    scrape_theverge()
+    try:
+        scrape_theverge()
+        logger.info("The Verge scraper completed.")
+    except Exception as e:
+        logger.exception("The Verge scraper failed.")
 
 if __name__ == "__main__":
     scheduler = BlockingScheduler()
@@ -33,4 +45,7 @@ if __name__ == "__main__":
     scheduler.add_job(job_theverge, 'interval', minutes=2)
 
     logger.info("Scheduler started. Press Ctrl+C to exit.")
-    scheduler.start()
+    try:
+        scheduler.start()
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Scheduler stopped.")

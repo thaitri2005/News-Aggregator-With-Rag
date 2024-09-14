@@ -1,7 +1,12 @@
+# app/main.py
 from flask import Flask
-from flask_cors import CORS  # type: ignore
+from flask_cors import CORS # type: ignore
 from api.routes import api
 from api.rag_model import create_text_index
+from logging_config import setup_logging
+
+# Initialize logging
+setup_logging()
 
 app = Flask(__name__)
 CORS(app)

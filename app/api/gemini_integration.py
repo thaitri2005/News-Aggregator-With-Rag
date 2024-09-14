@@ -1,10 +1,16 @@
+# app/api/gemini_integration.py
+
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
+from google.api_core import exceptions as google_exceptions
 import logging
 
 # Load environment variables from the .env file
 load_dotenv()
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Safely access the environment variables
 api_key = os.getenv("GEMINI_API_KEY")
@@ -14,18 +20,13 @@ if not api_key:
 # Configure Gemini API with the API key
 genai.configure(api_key=api_key)
 
-# Set up logging for errors and process information
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Function to summarize an article using the Gemini API
 def summarize_article(article_text):
     # Update generation config for concise and optimized output
     generation_config = {
-        "temperature": 0.7,  # Lowered for more focused output
+        "temperature": 0.7,
         "top_p": 0.9,
         "top_k": 50,
-        "max_output_tokens": 512,  # Reduced token limit for summaries
+        "max_output_tokens": 512,
         "response_mime_type": "text/plain",
     }
 
@@ -56,11 +57,15 @@ def summarize_article(article_text):
         # In case extra framing language is detected, clean up
         return summary.replace("Summary:", "").strip()
 
-    except Exception as e:
-        logger.error(f"An error occurred during article summarization: {str(e)}")
-
-        # Handle quota exhaustion or rate limits
-        if '429' in str(e):
-            return "Quota exhausted, summary not available."
-        
+    except google_exceptions.ResourceExhausted as e:
+        logger.error(f"Quota exhausted: {str(e)}")
+        return "Quota exhausted, summary not available."
+    except google_exceptions.InternalServerError as e:
+        logger.error(f"Internal server error: {str(e)}")
+        return "An internal error occurred while processing the article summary."
+    except google_exceptions.GoogleAPICallError as e:
+        logger.error(f"API call error: {str(e)}")
         return "An error occurred while processing the article summary."
+    except Exception as e:
+        logger.exception("Unexpected error during article summarization.")
+        return "An unexpected error occurred while processing the article summary."
