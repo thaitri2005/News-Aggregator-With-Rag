@@ -1,0 +1,36 @@
+# Exclude virtual environments located in the root
+../venv/
+../env/
+
+# Exclude compiled Python files
+__pycache__/
+*.pyc
+
+# Exclude logs
+*.log
+logs/
+
+# Exclude environment files
+.env
+../.env
+
+# Exclude version control directories
+../.git/
+../.gitignore
+
+# Exclude node modules (if any)
+../node_modules/
+
+# Exclude build artifacts
+build/
+dist/
+
+# Exclude Docker compose files
+../deployment/docker-compose.yml
+
+# Exclude editor and OS files
+../.vscode/
+../.idea/
+../*.swp
+../.DS_Store
+../Thumbs.db

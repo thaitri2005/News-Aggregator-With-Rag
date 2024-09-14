@@ -1,0 +1,31 @@
+# Exclude node modules
+node_modules/
+
+# Exclude build directory
+build/
+
+# Exclude environment files
+.env
+../.env
+
+# Exclude logs
+*.log
+logs/
+
+# Exclude version control directories
+../.git/
+../.gitignore
+
+# Exclude virtual environments from root
+../venv/
+../env/
+
+# Exclude Docker compose files
+../deployment/docker-compose.yml
+
+# Exclude editor and OS files
+../.vscode/
+../.idea/
+../*.swp
+../.DS_Store
+../Thumbs.db
