@@ -1,68 +1,26 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React from 'react';
 import {
   Container, TextField, Button, CircularProgress, Box, Typography, Card, CardContent, CardActions, Link,
 } from '@mui/material';
-import './App.css'; // Assuming your CSS
+import { useAppContext } from './AppContext';
+import './App.css';
 
 function App() {
-  const [searchQuery, setSearchQuery] = useState('');  // State to store the search query
-  const [articles, setArticles] = useState([]);  // State to store the articles
-  const [loading, setLoading] = useState(false); // State for loading indicator
-  const [error, setError] = useState(null);      // State for handling errors
-  const [selectedArticle, setSelectedArticle] = useState(null); // Track the selected article for summary
-  const [summaryPanelOpen, setSummaryPanelOpen] = useState(false); // Track if the summary panel is open
+  const { state, dispatch, searchArticles, fetchSummary } = useAppContext();
+  const { searchQuery, articles, selectedArticle, summaryPanelOpen, loading, error } = state;
 
-  // Function to handle the search input change
   const handleSearchInput = (event) => {
-    setSearchQuery(event.target.value);
+    dispatch({ type: 'SET_QUERY', payload: event.target.value });
   };
 
-  // Function to trigger search
-  const handleSearch = async () => {
-    if (searchQuery.trim() === '') return; // Prevent empty searches
+  const handleSearch = () => {
+    searchArticles(searchQuery);
+  };
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Fetch articles from the backend using the /retrieve API
-      const response = await axios.post('http://localhost:5000/api/retrieve', {
-        query: searchQuery,
-        page: 1,
-        limit: 5  // You can set any limit here
-      });
-      setArticles(response.data);
-    } catch (error) {
-      setError('An error occurred while fetching the articles');
-    } finally {
-      setLoading(false);
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      handleSearch();
     }
-  };
-
-  // Function to fetch summary for an article when "<" button is clicked
-  const fetchSummary = async (article) => {
-    setLoading(true);
-    try {
-      const response = await axios.post('http://localhost:5000/api/summarize', {
-        article_text: article.content,
-      });
-      setSelectedArticle({
-        ...article,
-        summary: response.data.summary || 'No summary available',
-      });
-      setSummaryPanelOpen(true);
-    } catch (error) {
-      setError('Failed to load summary');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Function to close the summary panel
-  const closeSummaryPanel = () => {
-    setSummaryPanelOpen(false); // Close the summary panel
-    setSelectedArticle(null); // Deselect the article
   };
 
   return (
@@ -72,14 +30,14 @@ function App() {
           News Aggregator
         </Typography>
 
-        {/* Search Input Field */}
+        {/* Search Input */}
         <Box display="flex" justifyContent="center" mb={2}>
           <TextField
             value={searchQuery}
             onChange={handleSearchInput}
             variant="outlined"
             placeholder="Search for news articles..."
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={handleKeyDown}
             style={{ width: '60%' }}
           />
           <Button
@@ -130,7 +88,7 @@ function App() {
       {/* Summary Panel */}
       {summaryPanelOpen && selectedArticle && (
         <Box className="summary-panel">
-          <Button onClick={closeSummaryPanel}>Close</Button>
+          <Button onClick={() => dispatch({ type: 'CLOSE_SUMMARY_PANEL' })}>Close</Button>
           <Typography variant="h6">{selectedArticle.title}</Typography>
           <Typography variant="body1">{selectedArticle.summary}</Typography>
         </Box>
