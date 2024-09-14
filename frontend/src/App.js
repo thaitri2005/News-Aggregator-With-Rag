@@ -1,7 +1,6 @@
 import React from 'react';
-import {
-  Container, TextField, Button, CircularProgress, Box, Typography, Card, CardContent, CardActions, Link,
-} from '@mui/material';
+import { Container, Box, TextField, Button, CircularProgress, Typography } from '@mui/material';
+import Article from './Article'; // Import the optimized Article component
 import { useAppContext } from './AppContext';
 import './App.css';
 
@@ -43,7 +42,6 @@ function App() {
             placeholder="Search for news articles..."
             onKeyDown={handleKeyDown}
             style={{ width: '60%' }}
-            aria-label="Search articles"
           />
           <Button
             onClick={handleSearch}
@@ -51,7 +49,6 @@ function App() {
             color="primary"
             style={{ marginLeft: '10px' }}
             disabled={loading}
-            aria-label="Search button"
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Search'}
           </Button>
@@ -64,27 +61,7 @@ function App() {
         <Box>
           {articles.length > 0 ? (
             articles.map((article) => (
-              <Card key={article._id} className="article-card" role="article">
-                <CardContent>
-                  <Typography variant="h6" color="primary">{article.title}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {new Date(article.date).toLocaleDateString()}
-                  </Typography>
-                  <Link href={article.source_url} target="_blank" rel="noopener">
-                    Read More
-                  </Link>
-                </CardContent>
-                <CardActions>
-                  <Button
-                    size="small"
-                    color="primary"
-                    onClick={() => fetchSummary(article)}
-                    aria-label={`View summary of ${article.title}`}
-                  >
-                    View Summary
-                  </Button>
-                </CardActions>
-              </Card>
+              <Article key={article._id} article={article} fetchSummary={fetchSummary} />
             ))
           ) : (
             <Typography align="center" color="textSecondary">
