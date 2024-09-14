@@ -14,6 +14,10 @@ function App() {
   };
 
   const handleSearch = () => {
+    if (searchQuery.trim() === '') {
+      dispatch({ type: 'SET_ERROR', payload: 'Please enter a search term' });
+      return;
+    }
     searchArticles(searchQuery);
   };
 
@@ -39,6 +43,7 @@ function App() {
             placeholder="Search for news articles..."
             onKeyDown={handleKeyDown}
             style={{ width: '60%' }}
+            aria-label="Search articles"
           />
           <Button
             onClick={handleSearch}
@@ -46,6 +51,7 @@ function App() {
             color="primary"
             style={{ marginLeft: '10px' }}
             disabled={loading}
+            aria-label="Search button"
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Search'}
           </Button>
@@ -58,7 +64,7 @@ function App() {
         <Box>
           {articles.length > 0 ? (
             articles.map((article) => (
-              <Card key={article._id} className="article-card">
+              <Card key={article._id} className="article-card" role="article">
                 <CardContent>
                   <Typography variant="h6" color="primary">{article.title}</Typography>
                   <Typography variant="body2" color="textSecondary">
@@ -73,6 +79,7 @@ function App() {
                     size="small"
                     color="primary"
                     onClick={() => fetchSummary(article)}
+                    aria-label={`View summary of ${article.title}`}
                   >
                     View Summary
                   </Button>
@@ -80,14 +87,16 @@ function App() {
               </Card>
             ))
           ) : (
-            <Typography>No articles found</Typography>
+            <Typography align="center" color="textSecondary">
+              {loading ? '' : 'No articles found. Try refining your search.'}
+            </Typography>
           )}
         </Box>
       </Box>
 
       {/* Summary Panel */}
       {summaryPanelOpen && selectedArticle && (
-        <Box className="summary-panel">
+        <Box className="summary-panel" role="complementary" aria-label="Summary panel">
           <Button onClick={() => dispatch({ type: 'CLOSE_SUMMARY_PANEL' })}>Close</Button>
           <Typography variant="h6">{selectedArticle.title}</Typography>
           <Typography variant="body1">{selectedArticle.summary}</Typography>
