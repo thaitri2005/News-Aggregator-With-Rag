@@ -35,11 +35,11 @@ function App() {
   // Intersection observer to detect scrolling to the end of the article list
   const lastArticleElementRef = useRef();
   useEffect(() => {
-    if (loading || !hasMore) return; // Stop if already loading or no more articles
+    if (loading || !hasMore) return;
 
     const observerCallback = (entries) => {
       if (entries[0].isIntersecting) {
-        loadMoreArticles(searchQuery, page + 1); // Load next page when scrolling reaches the end
+        loadMoreArticles(searchQuery, page + 1);
       }
     };
 
@@ -52,26 +52,26 @@ function App() {
 
   return (
     <Container maxWidth="md" className="app-container">
-      <Box my={4}>
+      <Box className="sticky-search-bar">
         <Typography variant="h4" align="center" color="textPrimary" gutterBottom>
           News Aggregator
         </Typography>
 
         {/* Search Input */}
-        <Box display="flex" justifyContent="center" mb={2}>
+        <Box className="search-container">
           <TextField
             value={searchQuery}
             onChange={handleSearchInput}
             variant="outlined"
             placeholder="Search for news articles..."
             onKeyDown={handleKeyDown}
-            style={{ width: '60%' }}
+            className="search-input"
           />
           <Button
             onClick={handleSearch}
             variant="contained"
             color="primary"
-            style={{ marginLeft: '10px' }}
+            className="search-button"
             disabled={loading}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Search'}
@@ -79,39 +79,39 @@ function App() {
         </Box>
 
         {/* Error Message */}
-        {error && <Typography color="error" align="center">{error}</Typography>}
+        {error && <Typography className="error-message" align="center">{error}</Typography>}
+      </Box>
 
-        {/* Articles List */}
-        <Box>
-          {articles.length > 0 ? (
-            articles.map((article, index) => {
-              if (articles.length === index + 1) {
-                return (
-                  <div ref={lastArticleElementRef} key={article._id}>
-                    <Article article={article} fetchSummary={fetchSummary} />
-                  </div>
-                );
-              } else {
-                return <Article key={article._id} article={article} fetchSummary={fetchSummary} />;
-              }
-            })
-          ) : (
-            <Typography align="center" color="textSecondary">
-              {loading ? '' : 'No articles found. Try refining your search.'}
-            </Typography>
-          )}
-        </Box>
-
-        {/* Loading more articles */}
-        {loading && <CircularProgress style={{ display: 'block', margin: '20px auto' }} />}
-
-        {/* No more articles message */}
-        {!loading && !hasMore && (
+      {/* Articles List */}
+      <Box className="articles-list">
+        {articles.length > 0 ? (
+          articles.map((article, index) => {
+            if (articles.length === index + 1) {
+              return (
+                <div ref={lastArticleElementRef} key={article._id}>
+                  <Article article={article} fetchSummary={fetchSummary} />
+                </div>
+              );
+            } else {
+              return <Article key={article._id} article={article} fetchSummary={fetchSummary} />;
+            }
+          })
+        ) : (
           <Typography align="center" color="textSecondary">
-            No more articles to load.
+            {loading ? '' : 'No articles found. Try refining your search.'}
           </Typography>
         )}
       </Box>
+
+      {/* Loading more articles */}
+      {loading && <CircularProgress style={{ display: 'block', margin: '20px auto' }} />}
+
+      {/* No more articles message */}
+      {!loading && !hasMore && (
+        <Typography align="center" color="textSecondary">
+          No more articles to load.
+        </Typography>
+      )}
 
       {/* Summary Panel */}
       {summaryPanelOpen && selectedArticle && (
