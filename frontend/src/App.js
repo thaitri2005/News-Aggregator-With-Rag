@@ -1,30 +1,54 @@
-import React from 'react';
-import { Container, Box, TextField, Button, CircularProgress, Typography } from '@mui/material';
+import React, { useEffect, useRef } from 'react';
+import {
+  Container, Box, TextField, Button, CircularProgress, Typography,
+} from '@mui/material';
 import Article from './Article'; // Import the optimized Article component
 import { useAppContext } from './AppContext';
 import './App.css';
 
 function App() {
-  const { state, dispatch, searchArticles, fetchSummary } = useAppContext();
-  const { searchQuery, articles, selectedArticle, summaryPanelOpen, loading, error } = state;
+  const { state, dispatch, searchArticles, fetchSummary, loadMoreArticles } = useAppContext();
+  const { searchQuery, articles, selectedArticle, summaryPanelOpen, loading, error, page, hasMore } = state;
+  const observer = useRef();
 
+  // Handle search input
   const handleSearchInput = (event) => {
     dispatch({ type: 'SET_QUERY', payload: event.target.value });
   };
 
+  // Trigger search
   const handleSearch = () => {
     if (searchQuery.trim() === '') {
       dispatch({ type: 'SET_ERROR', payload: 'Please enter a search term' });
       return;
     }
-    searchArticles(searchQuery);
+    searchArticles(searchQuery, 1); // Start from page 1
   };
 
+  // Handle "Enter" key to trigger search
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       handleSearch();
     }
   };
+
+  // Intersection observer to detect scrolling to the end of the article list
+  const lastArticleElementRef = useRef();
+  useEffect(() => {
+    if (loading || !hasMore) return; // Stop if already loading or no more articles
+
+    const observerCallback = (entries) => {
+      if (entries[0].isIntersecting) {
+        loadMoreArticles(searchQuery, page + 1); // Load next page when scrolling reaches the end
+      }
+    };
+
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver(observerCallback);
+    if (lastArticleElementRef.current) observer.current.observe(lastArticleElementRef.current);
+
+  }, [loading, hasMore, searchQuery, page, loadMoreArticles]);
 
   return (
     <Container maxWidth="md" className="app-container">
@@ -60,15 +84,33 @@ function App() {
         {/* Articles List */}
         <Box>
           {articles.length > 0 ? (
-            articles.map((article) => (
-              <Article key={article._id} article={article} fetchSummary={fetchSummary} />
-            ))
+            articles.map((article, index) => {
+              if (articles.length === index + 1) {
+                return (
+                  <div ref={lastArticleElementRef} key={article._id}>
+                    <Article article={article} fetchSummary={fetchSummary} />
+                  </div>
+                );
+              } else {
+                return <Article key={article._id} article={article} fetchSummary={fetchSummary} />;
+              }
+            })
           ) : (
             <Typography align="center" color="textSecondary">
               {loading ? '' : 'No articles found. Try refining your search.'}
             </Typography>
           )}
         </Box>
+
+        {/* Loading more articles */}
+        {loading && <CircularProgress style={{ display: 'block', margin: '20px auto' }} />}
+
+        {/* No more articles message */}
+        {!loading && !hasMore && (
+          <Typography align="center" color="textSecondary">
+            No more articles to load.
+          </Typography>
+        )}
       </Box>
 
       {/* Summary Panel */}

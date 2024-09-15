@@ -153,26 +153,43 @@ def retrieve():
             logger.error("No input data provided.")
             abort(400, description="No input data provided.")
 
+        # Validate input data using marshmallow schema
         retrieve_schema = RetrieveSchema()
         validated_data = retrieve_schema.load(data)
 
         query = validated_data.get('query')
         page = validated_data.get('page')
         limit = validated_data.get('limit')
-        sort_by = validated_data.get('sort_by')
+        sort_by = 'date'  # Sort by date to get latest articles
         order = validated_data.get('order')
 
-        articles = retrieve_articles(query, page, limit, sort_by, order)
-        if not articles:
+        # Determine the sorting order for MongoDB
+        sort_order = -1 if order == 'desc' else 1  # Default to descending for latest first
+
+        # MongoDB allows for text search using $text index for full-text search
+        skip = (page - 1) * limit
+
+        # Perform the search in MongoDB using text search and pagination
+        articles = list(articles_collection.find(
+            {"$text": {"$search": query}}  # Full-text search on the article content
+        ).sort([(sort_by, sort_order)])  # Sort by date descending to get latest articles first
+        .skip(skip).limit(limit))
+
+        # If articles are found, convert ObjectId to strings
+        if articles:
+            articles = [convert_objectid_to_str(article) for article in articles]
+            return jsonify(articles), 200
+        else:
             logger.info("No articles found matching the query.")
             return jsonify({"message": "No articles found"}), 404
-        return jsonify(articles), 200
     except ValidationError as ve:
         logger.error(f"Validation error: {ve.messages}")
         abort(400, description=ve.messages)
     except Exception as e:
         logger.exception("An error occurred during article retrieval.")
         abort(500, description="Internal server error.")
+
+
 
 # Error handler for 400 Bad Request
 @api.errorhandler(400)
