@@ -1,3 +1,4 @@
+/* frontend/src/AppContext.js */
 import React, { createContext, useContext, useReducer } from 'react';
 import axios from 'axios';
 

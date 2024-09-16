@@ -1,3 +1,4 @@
+/* frontend/src/Article.js */
 import React from 'react';
 import { Card, CardContent, Typography, CardActions, Button, Link } from '@mui/material';
 import PropTypes from 'prop-types';

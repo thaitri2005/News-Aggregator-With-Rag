@@ -1,3 +1,4 @@
+#app/.dockerigniore
 # Exclude virtual environments located in the root
 ../venv/
 ../env/

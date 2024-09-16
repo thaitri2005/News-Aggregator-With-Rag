@@ -1,3 +1,4 @@
+/* frontend/src/App.js */
 import React, { useEffect, useRef } from 'react';
 import {
   Container, Box, TextField, Button, CircularProgress, Typography,
