@@ -87,6 +87,7 @@ export const AppProvider = ({ children }) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await axios.post('http://localhost:5000/api/summarize', {
+        article_id: article._id,  // Pass the article ID
         article_text: article.content,
       });
       dispatch({

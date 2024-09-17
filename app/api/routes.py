@@ -131,15 +131,43 @@ def add_query():
 def summarize():
     try:
         data = request.get_json()
-        article_text = data.get("article_text")
-        if not article_text:
-            logger.error("No article text provided.")
-            abort(400, description="No article text provided.")
+        article_id = data.get("article_id")
 
-        # Call the summarization function
+        if not article_id:
+            logger.error("No article ID provided.")
+            abort(400, description="No article ID provided.")
+
+        # Fetch the article by its ID
+        article = articles_collection.find_one({"_id": ObjectId(article_id)})
+
+        if not article:
+            logger.error(f"Article not found with ID: {article_id}")
+            abort(404, description="Article not found.")
+
+        # Check if the summary already exists
+        if "summary" in article and article["summary"]:
+            logger.info(f"Returning existing summary for article {article_id}.")
+            return jsonify({"summary": article["summary"]}), 200
+
+        # If no summary exists, generate a new one
+        article_text = article.get("content")
         summary = summarize_article(article_text)
-        logger.info("Article summarized successfully.")
+
+        # Check if the response is an error message before saving
+        if "error" in summary.lower() or "quota" in summary.lower() or "internal" in summary.lower():
+            # Log that we won't store this as a summary
+            logger.error(f"Failed to summarize article {article_id}, error message: {summary}")
+            return jsonify({"summary": summary}), 500
+
+        # Update the article document with the generated summary if it's valid
+        articles_collection.update_one(
+            {"_id": ObjectId(article_id)},
+            {"$set": {"summary": summary}}
+        )
+
+        logger.info(f"Article summarized and stored successfully for article {article_id}.")
         return jsonify({"summary": summary}), 200
+
     except Exception as e:
         logger.exception("An error occurred during summarization.")
         abort(500, description="An error occurred while processing the article summary.")

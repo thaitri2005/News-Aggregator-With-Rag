@@ -17,21 +17,34 @@ def create_text_index():
     Ensures that a text index on the 'title' and 'content' fields of the articles collection exists.
     """
     try:
+        # Get the articles collection
         articles_collection = db.get_collection('articles')
+
         # Get existing indexes
         existing_indexes = articles_collection.index_information()
-        # Define the desired index fields
+
+        # Define the desired index fields (title and content, not summary)
         desired_fields = {'title', 'content'}
-        # Check if an index with the same fields exists
         index_exists = False
+        conflicting_index = None
+
+        # Check if an index with the same fields exists
         for index_name, index_info in existing_indexes.items():
-            # Check if the index is a text index
             if index_info.get('weights'):
                 index_fields = set(index_info['weights'].keys())
                 if index_fields == desired_fields:
-                    index_exists = True
-                    logger.info(f"Text index on 'title' and 'content' already exists: {index_name}")
+                    if index_name == 'title_content_text_index':
+                        index_exists = True
+                    else:
+                        conflicting_index = index_name
                     break
+
+        # Drop the conflicting index if it exists
+        if conflicting_index and not index_exists:
+            logger.info(f"Dropping conflicting index: {conflicting_index}")
+            articles_collection.drop_index(conflicting_index)
+
+        # Create the new index if it doesn't exist
         if not index_exists:
             articles_collection.create_index(
                 [("title", TEXT), ("content", TEXT)],
@@ -41,6 +54,7 @@ def create_text_index():
             logger.info("Text index created on 'title' and 'content' fields.")
         else:
             logger.info("Text index on 'title' and 'content' already exists.")
+
     except PyMongoError as e:
         logger.exception(f"Failed to create text index: {e}")
 
