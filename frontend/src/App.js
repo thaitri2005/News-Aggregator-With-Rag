@@ -51,6 +51,17 @@ function App() {
 
   }, [loading, hasMore, searchQuery, page, loadMoreArticles]);
 
+  // Error fade-out effect
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        dispatch({ type: 'SET_ERROR', payload: null });
+      }, 3000); // Fades out the error after 3 seconds
+
+      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts or if error changes
+    }
+  }, [error, dispatch]);
+
   return (
     <Container maxWidth="md" className="app-container">
       <Box className="sticky-search-bar">
