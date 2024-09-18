@@ -172,7 +172,7 @@ def summarize():
         logger.exception("An error occurred during summarization.")
         abort(500, description="An error occurred while processing the article summary.")
 
-# Retrieve articles based on a search query
+# Retrieve articles based on a search query, prioritizing title
 @api.route('/retrieve', methods=['POST'])
 def retrieve():
     try:
@@ -185,11 +185,11 @@ def retrieve():
         retrieve_schema = RetrieveSchema()
         validated_data = retrieve_schema.load(data)
 
-        query = validated_data.get('query')
+        query = validated_data.get('query').strip()  # Remove unnecessary spaces
         page = validated_data.get('page')
         limit = validated_data.get('limit')
-        sort_by = 'date'  # Sort by date to get latest articles
-        order = validated_data.get('order')
+        sort_by = validated_data.get('sort_by') or 'score'  # Sort by text score (relevance)
+        order = validated_data.get('order') or 'desc'
 
         # Determine the sorting order for MongoDB
         sort_order = -1 if order == 'desc' else 1  # Default to descending for latest first
@@ -198,9 +198,12 @@ def retrieve():
         skip = (page - 1) * limit
 
         # Perform the search in MongoDB using text search and pagination
+        search_conditions = {"$text": {"$search": query}}
+        # Retrieve articles, sorted by text score (relevance) or date
         articles = list(articles_collection.find(
-            {"$text": {"$search": query}}  # Full-text search on the article content
-        ).sort([(sort_by, sort_order)])  # Sort by date descending to get latest articles first
+            search_conditions,
+            {"score": {"$meta": "textScore"}}  # Include the score from the text index
+        ).sort([("score", {"$meta": "textScore"}), (sort_by, sort_order)])  # Sort by text relevance and then date
         .skip(skip).limit(limit))
 
         # If articles are found, convert ObjectId to strings
