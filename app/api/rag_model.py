@@ -1,4 +1,3 @@
-# app/api/rag_model.py
 import os
 import logging
 from pymongo import TEXT
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 def create_text_index():
     """
     Ensures that a text index on the 'title' and 'content' fields of the articles collection exists, 
-    with higher priority given to the 'title'.
+    with even higher priority given to the 'title'.
     """
     try:
         articles_collection = db.get_collection('articles')
@@ -40,15 +39,15 @@ def create_text_index():
         if conflicting_index and not index_exists:
             articles_collection.drop_index(conflicting_index)
 
-        # Create a weighted index, giving higher priority to 'title'
+        # Create a weighted index, giving a significantly higher weight to 'title'
         if not index_exists:
             articles_collection.create_index(
                 [("title", "text"), ("content", "text")],
-                weights={"title": 10, "content": 5},  # Higher weight for title
+                weights={"title": 20, "content": 5},  # Even higher weight for title
                 name="title_content_text_index",
                 default_language="vietnamese"  # Use Vietnamese as the default language
             )
-            logger.info("Text index with weighted priority on 'title' created successfully.")
+            logger.info("Text index with even higher priority on 'title' created successfully.")
         else:
             logger.info("Text index on 'title' and 'content' already exists.")
 
@@ -59,43 +58,56 @@ def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc', fil
     try:
         articles_collection = db.get_collection('articles')
 
-        # Tokenize the query and remove common stopwords for cleaner search
+        # Sanitize and prioritize the query
         sanitized_query = re.sub(r'[^\w\s]', '', query)
 
-        # MongoDB text search with score
-        mongo_query = {"$text": {"$search": sanitized_query}}
+        # MongoDB full-text search with weighted priority on title
+        text_search_query = {"$text": {"$search": sanitized_query}}
 
-        # Add partial matching for more flexible search
-        regex_query = {
-            "$or": [
-                {"title": {"$regex": sanitized_query, "$options": "i"}},
-                {"content": {"$regex": sanitized_query, "$options": "i"}}
-            ]
-        }
+        # Separate regex-based search for the title (for exact or partial matches in the title)
+        title_regex_query = {"title": {"$regex": sanitized_query, "$options": "i"}}
 
-        # Merge text search with regex for better results
-        final_query = {"$and": [mongo_query, regex_query]}
+        # Execute title search first (prioritize title matches)
+        title_search_results = articles_collection.find(
+            title_regex_query,
+            {
+                "score": {"$meta": "textScore"},
+                "title": 1,
+                "content": 1,
+                "date": 1,
+                "source_url": 1,
+                "source": 1
+            }
+        ).sort([("date", -1)]).skip((page - 1) * limit).limit(limit)
 
-        # Define projection, include the score
-        projection = {
-            "score": {"$meta": "textScore"},
-            "title": 1,
-            "content": 1,
-            "date": 1,
-            "source_url": 1,
-            "source": 1
-        }
+        # Execute full-text search (search both title and content, with title weighted higher)
+        text_search_results = articles_collection.find(
+            text_search_query,
+            {
+                "score": {"$meta": "textScore"},
+                "title": 1,
+                "content": 1,
+                "date": 1,
+                "source_url": 1,
+                "source": 1
+            }
+        ).sort([("score", {"$meta": "textScore"} if sort_by == 'score' else -1)]).skip((page - 1) * limit).limit(limit)
 
-        # Sort by relevance (textScore) or other fields like 'date'
-        sort_order = -1 if order == 'desc' else 1
-        sort_field = 'score' if sort_by == 'score' else 'date'
+        # Combine title-based and content-based results, prioritizing title matches
+        combined_results = list(title_search_results) + list(text_search_results)
 
-        search_results = articles_collection.find(
-            final_query,
-            projection
-        ).sort([(sort_field, {"$meta": "textScore"} if sort_field == 'score' else sort_order)]).skip((page - 1) * limit).limit(limit)
+        # Ensure results contain the actual query (keyword-based filtering)
+        filtered_results = [
+            article for article in combined_results
+            if sanitized_query.lower() in article.get('title', '').lower() or sanitized_query.lower() in article.get('content', '').lower()
+        ]
 
-        articles = [convert_objectid_to_str(result) for result in search_results]
+        # Remove duplicates by ObjectId and prioritize title-based matches
+        unique_results = {str(result['_id']): result for result in filtered_results}
+
+        # Ensure pagination is applied
+        articles = list(unique_results.values())[:limit]
+
         return articles
     except PyMongoError as e:
         logger.exception(f"Failed to retrieve articles: {e}")
