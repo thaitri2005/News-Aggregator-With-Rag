@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # scheduler.add_job(job_techcrunch, 'interval', minutes=2)
     # scheduler.add_job(job_ycombinator, 'interval', minutes=2)
     # scheduler.add_job(job_theverge, 'interval', minutes=2)
-    scheduler.add_job(job_vnexpress, 'interval', minutes=1)
+    scheduler.add_job(job_vnexpress, 'interval', minutes=3)
 
     logger.info("Scheduler started. Press Ctrl+C to exit.")
     try:

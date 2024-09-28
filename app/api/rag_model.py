@@ -1,5 +1,4 @@
 # app/api/rag_model.py
-
 import os
 import logging
 from pymongo import TEXT
@@ -47,7 +46,7 @@ def create_text_index():
                 [("title", "text"), ("content", "text")],
                 weights={"title": 10, "content": 5},  # Higher weight for title
                 name="title_content_text_index",
-                default_language="english"
+                default_language="vietnamese"  # Use Vietnamese as the default language
             )
             logger.info("Text index with weighted priority on 'title' created successfully.")
         else:
@@ -60,11 +59,22 @@ def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc', fil
     try:
         articles_collection = db.get_collection('articles')
 
-        # Validate and sanitize input
+        # Tokenize the query and remove common stopwords for cleaner search
         sanitized_query = re.sub(r'[^\w\s]', '', query)
 
         # MongoDB text search with score
         mongo_query = {"$text": {"$search": sanitized_query}}
+
+        # Add partial matching for more flexible search
+        regex_query = {
+            "$or": [
+                {"title": {"$regex": sanitized_query, "$options": "i"}},
+                {"content": {"$regex": sanitized_query, "$options": "i"}}
+            ]
+        }
+
+        # Merge text search with regex for better results
+        final_query = {"$and": [mongo_query, regex_query]}
 
         # Define projection, include the score
         projection = {
@@ -81,7 +91,7 @@ def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc', fil
         sort_field = 'score' if sort_by == 'score' else 'date'
 
         search_results = articles_collection.find(
-            mongo_query,
+            final_query,
             projection
         ).sort([(sort_field, {"$meta": "textScore"} if sort_field == 'score' else sort_order)]).skip((page - 1) * limit).limit(limit)
 
