@@ -7,3 +7,6 @@ google-generativeai
 bs4
 python-dotenv
 marshmallow
+lxml
+selenium
+webdriver-manager

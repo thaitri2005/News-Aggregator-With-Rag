@@ -4,6 +4,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from techcrunch_scraper import scrape_techcrunch
 from ycombinator_scraper import scrape_ycombinator
 from theverge_scraper import scrape_theverge
+from vnexpress_scraper import scrape_vnexpress
 import time
 
 # Set up logging
@@ -34,13 +35,22 @@ def job_theverge():
         logger.info("The Verge scraper completed.")
     except Exception as e:
         logger.exception("The Verge scraper failed.")
+        
+def job_vnexpress():
+    logger.info("Running VNExpress scraper...")
+    try:
+        scrape_vnexpress()
+        logger.info("VNExpress scraper completed.")
+    except Exception as e:
+        logger.exception("VNExpress scraper failed.")
 
 if __name__ == "__main__":
     scheduler = BlockingScheduler()
 
-    scheduler.add_job(job_techcrunch, 'interval', minutes=2)
-    scheduler.add_job(job_ycombinator, 'interval', minutes=2)
-    scheduler.add_job(job_theverge, 'interval', minutes=2)
+    # scheduler.add_job(job_techcrunch, 'interval', minutes=2)
+    # scheduler.add_job(job_ycombinator, 'interval', minutes=2)
+    # scheduler.add_job(job_theverge, 'interval', minutes=2)
+    scheduler.add_job(job_vnexpress, 'interval', minutes=1)
 
     logger.info("Scheduler started. Press Ctrl+C to exit.")
     try:
