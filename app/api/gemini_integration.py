@@ -20,10 +20,10 @@ if not api_key:
 # Configure Gemini API with the API key
 genai.configure(api_key=api_key)
 
-# Summarize article function
+# Summarize article function in Vietnamese
 def summarize_article(article_text, max_retries=3):
     """
-    Summarizes an article using the Gemini API.
+    Summarizes an article using the Gemini API in Vietnamese.
 
     Parameters:
         article_text (str): The text of the article to be summarized.
@@ -48,27 +48,26 @@ def summarize_article(article_text, max_retries=3):
         generation_config=generation_config,
     )
 
-    # Ensure prompt is clear and precise
+    # Ensure prompt is clear and precise, with instructions to summarize in Vietnamese
     prompt = (
-        "Summarize the following article in 5 sentences or less. "
-        "Keep it concise and in natural language. "
-        "Only provide the summary without any extra information or framing."
+        "Tóm tắt bài báo sau bằng tiếng Việt trong vòng 5 câu trở xuống. "
+        "Hãy tóm gọn và chỉ cung cấp tóm tắt mà không thêm thông tin hoặc ngữ cảnh phụ."
     )
 
     # Retry logic in case of transient errors
     for attempt in range(max_retries):
         try:
             chat_session = model.start_chat(history=[])
-            # Send the prompt along with the article text for summarization
+            # Send the prompt along with the article text for summarization in Vietnamese
             response = chat_session.send_message(f"{prompt}\n\n{article_text}")
             summary = response.text.strip()
 
             # Ensure no extra language is included
-            if not summary.startswith("Summary:"):
+            if not summary.startswith("Tóm tắt:"):
                 return summary
 
             # Clean up if extra framing language is detected
-            return summary.replace("Summary:", "").strip()
+            return summary.replace("Tóm tắt:", "").strip()
 
         except google_exceptions.ResourceExhausted as e:
             # Handle quota exhaustion error

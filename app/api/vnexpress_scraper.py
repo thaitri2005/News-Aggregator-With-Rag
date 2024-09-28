@@ -38,7 +38,7 @@ def fetch_article_content(link):
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Locate the main article content using the appropriate CSS selector (e.g., the <article> tag with class 'fck_detail')
+        # Locate the main article content using the appropriate CSS selector
         article_content = soup.select("article.fck_detail p.Normal")
 
         # Combine all paragraphs into a single content string
@@ -77,6 +77,7 @@ def get_news(limit_news=20):
             content = fetch_article_content(link)
 
             if content:
+                # Create an Article object with title, link, and content
                 list_articles.append(Article(
                     title=title['title'],
                     link=link,
@@ -91,17 +92,18 @@ def save_to_mongo(articles):
     new_articles = []
 
     for article in articles:
-        # Check for duplicates based on title and link
-        if collection.find_one({'title': article.title, 'link': article.link}):
+        # Check for duplicates based on title and source URL (link)
+        if collection.find_one({'title': article.title, 'source_url': article.link}):
             logger.info(f"Duplicate found for article '{article.title}', skipping.")
             continue
 
+        # Save in the desired format
         new_articles.append({
             'title': article.title,
             'content': article.content,
-            'link': article.link,
-            'date': datetime.now(),
-            'source': 'VNExpress'
+            'date': datetime.now(),  # Current date when saving
+            'source_url': article.link,  # Storing the link as source_url
+            'source': 'VNExpress'  # You can modify the source as needed
         })
 
     if new_articles:
