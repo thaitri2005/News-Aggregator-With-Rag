@@ -46,6 +46,31 @@ def scrape_article_content(url):
         logger.exception(f"An unexpected error occurred when fetching content from {url}")
         return None
 
+# Function to extract articles from both original and additional sections
+def extract_article_links(soup):
+    base_url = "https://tuoitre.vn"
+    
+    # Original section scraping
+    original_articles = soup.select('div.swiper-slide .box-category-link-title')
+    
+    # Additional sections scraping
+    additional_articles = soup.select('div.box-category-item a.box-category-link-title')
+    
+    # Combine both article sets
+    all_articles = original_articles + additional_articles
+
+    article_links = []
+    for article in all_articles:
+        title = article.get_text(strip=True)
+        link = article['href']
+
+        if not link.startswith('http'):
+            link = base_url + link
+
+        article_links.append({'title': title, 'link': link})
+
+    return article_links
+
 # Main function to scrape Tuổi Trẻ
 def scrape_tuoitre():
     base_url = "https://tuoitre.vn"
@@ -58,9 +83,8 @@ def scrape_tuoitre():
         logger.error(f"Error fetching Tuổi Trẻ page: {e}")
         return
 
-    # Extracting the articles based on the updated HTML structure
-    # Articles seem to be inside .swiper-slide and the link is within a tag with class .box-category-link-title
-    articles = soup.select('div.swiper-slide .box-category-link-title')
+    # Extract article links from both the original and additional sections
+    articles = extract_article_links(soup)
     if not articles:
         logger.warning("No articles found on Tuổi Trẻ.")
         return
@@ -69,11 +93,8 @@ def scrape_tuoitre():
     collection = get_mongo_collection()
 
     for article in articles:
-        title = article.get_text(strip=True)
-        link = article['href']
-
-        if not link.startswith('http'):
-            link = base_url + link
+        title = article['title']
+        link = article['link']
 
         logger.info(f"Fetching content from {link}")
 
