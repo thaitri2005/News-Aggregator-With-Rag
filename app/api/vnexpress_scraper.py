@@ -21,38 +21,63 @@ def get_mongo_collection():
 
 # Article class for holding article information
 class Article:
-    def __init__(self, title, link, content):
+    def __init__(self, title, link, content, date):
         self.title = title
         self.link = link
         self.content = content
+        self.date = date  # Article date
 
-# Function to fetch article body/content from each article link
-def fetch_article_content(link):
+# Function to fetch article body/content and date from each article link
+def fetch_article_content_and_date(link):
     try:
         session = requests.Session()
         response = session.get(link)
 
         if response.status_code != 200:
             logger.error(f"Failed to fetch article: {link}, status code: {response.status_code}")
-            return None
+            return None, None
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Locate the main article content using the appropriate CSS selector
+        # Locate the main article content
         article_content = soup.select("article.fck_detail p.Normal")
 
         # Combine all paragraphs into a single content string
-        content = "\n".join([p.text for p in article_content if p.text])
+        content = "\n".join([p.get_text(strip=True) for p in article_content if p.text])
 
         if not content:
             logger.warning(f"Content not found for {link}")
-            return None
+            return None, None
 
-        return content
+        # Extract the publication date
+        date_tag = soup.find("span", class_="date")
+        if date_tag:
+            date_str = date_tag.get_text(strip=True)
+            # Parse the date string into a datetime object
+            try:
+                # Example date format: "Thứ năm, 3/10/2024, 11:53 (GMT+7)"
+                # Remove 'GMT' part and any extra whitespace
+                date_str = date_str.split(' (GMT')[0].strip()
+                # Remove the weekday (e.g., 'Thứ năm,') part
+                date_parts = date_str.split(', ')
+                if len(date_parts) >= 2:
+                    date_str = ', '.join(date_parts[1:])  # Get '3/10/2024, 11:53'
+                    article_date = datetime.strptime(date_str, '%d/%m/%Y, %H:%M')
+                else:
+                    logger.warning(f"Unexpected date format for {link}: {date_str}")
+                    article_date = None
+            except ValueError as ve:
+                logger.warning(f"Failed to parse date for {link}: {date_str}")
+                article_date = None
+        else:
+            logger.warning(f"Date not found for {link}")
+            article_date = None
+
+        return content, article_date
 
     except Exception as e:
-        logger.error(f"Error fetching article content from {link}: {str(e)}")
-        return None
+        logger.error(f"Error fetching article content and date from {link}: {str(e)}")
+        return None, None
 
 # Scrape articles using requests and BeautifulSoup
 def get_news(limit_news=20):
@@ -66,29 +91,26 @@ def get_news(limit_news=20):
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    # Select different types of articles from the main page
+    # Select articles from the main page
     articles = soup.select("article.item-news")
-    
-    # Optionally, scrape other article containers if they have a different structure
-    # For example, scraping from different sections, hidden articles, or articles in other containers:
-    # additional_articles = soup.select("div.some-other-section article")
-    # articles += additional_articles  # Append to the list
 
     list_articles = []
     for element in articles:
-        title = element.select_one("h3.title-news > a")
-        link = title['href'] if title else None
+        title_tag = element.select_one("h3.title-news > a")
+        link = title_tag['href'] if title_tag else None
 
-        if title and link:
+        if title_tag and link:
+            title = title_tag['title'].strip()
             logger.info(f"Fetching content from {link}")
-            content = fetch_article_content(link)
+            content, article_date = fetch_article_content_and_date(link)
 
-            if content:
-                # Create an Article object with title, link, and content
+            if content and article_date:
+                # Create an Article object with title, link, content, and date
                 list_articles.append(Article(
-                    title=title['title'],
+                    title=title,
                     link=link,
-                    content=content
+                    content=content,
+                    date=article_date
                 ))
 
     return list_articles
@@ -108,9 +130,9 @@ def save_to_mongo(articles):
         new_articles.append({
             'title': article.title,
             'content': article.content,
-            'date': datetime.now(),  # Current date when saving
-            'source_url': article.link,  # Storing the link as source_url
-            'source': 'VNExpress'  # You can modify the source as needed
+            'date': article.date,  # Use the actual article date
+            'source_url': article.link,
+            'source': 'VNExpress'
         })
 
     if new_articles:
@@ -134,6 +156,5 @@ def scrape_vnexpress():
     save_to_mongo(articles)
     logger.info("VNExpress scraper completed.")
 
-# For testing purposes, you can call this function directly
 if __name__ == "__main__":
     scrape_vnexpress()
