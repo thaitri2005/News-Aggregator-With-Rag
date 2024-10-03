@@ -5,6 +5,7 @@ from techcrunch_scraper import scrape_techcrunch
 from ycombinator_scraper import scrape_ycombinator
 from theverge_scraper import scrape_theverge
 from vnexpress_scraper import scrape_vnexpress
+from tuoitre_scraper import scrape_tuoitre
 import time
 
 # Set up logging
@@ -44,6 +45,14 @@ def job_vnexpress():
     except Exception as e:
         logger.exception("VNExpress scraper failed.")
 
+def job_tuoitre():
+    logger.info("Running Tuổi Trẻ scraper...")
+    try:
+        scrape_tuoitre()
+        logger.info("Tuổi Trẻ scraper completed.")
+    except Exception as e:
+        logger.exception("Tuổi Trẻ scraper failed.")
+
 if __name__ == "__main__":
     scheduler = BlockingScheduler()
 
@@ -51,6 +60,7 @@ if __name__ == "__main__":
     # scheduler.add_job(job_ycombinator, 'interval', minutes=2)
     # scheduler.add_job(job_theverge, 'interval', minutes=2)
     scheduler.add_job(job_vnexpress, 'interval', minutes=3)
+    scheduler.add_job(job_tuoitre, 'interval', minutes=3)
 
     logger.info("Scheduler started. Press Ctrl+C to exit.")
     try:
