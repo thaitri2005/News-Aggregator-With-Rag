@@ -65,7 +65,14 @@ def get_news(limit_news=20):
         return []
 
     soup = BeautifulSoup(response.content, 'html.parser')
-    articles = soup.select("article.item-news", limit=limit_news)
+
+    # Select different types of articles from the main page
+    articles = soup.select("article.item-news")
+    
+    # Optionally, scrape other article containers if they have a different structure
+    # For example, scraping from different sections, hidden articles, or articles in other containers:
+    # additional_articles = soup.select("div.some-other-section article")
+    # articles += additional_articles  # Append to the list
 
     list_articles = []
     for element in articles:
