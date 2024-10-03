@@ -21,10 +21,11 @@ def get_mongo_collection():
 
 # Article class for holding article information
 class Article:
-    def __init__(self, title, link, content):
+    def __init__(self, title, link, content, date):
         self.title = title
         self.link = link
         self.content = content
+        self.date = date
 
 # Function to fetch article body/content from each article link
 def fetch_article_content(link):
@@ -40,19 +41,26 @@ def fetch_article_content(link):
 
         # Locate the article content
         article_content = soup.select("div.maincontent p")
-
-        # Combine all paragraphs into a single content string
         content = "\n".join([p.text for p in article_content if p.text])
+
+        # Locate the publish date
+        publish_date = soup.select_one("div.publish-date")
+        if publish_date:
+            date_str = publish_date.text.strip().split()[0]
+            date = datetime.strptime(date_str, "%d/%m/%Y")
+        else:
+            logger.warning(f"Date not found for {link}, using current datetime")
+            date = datetime.now()
 
         if not content:
             logger.warning(f"Content not found for {link}")
-            return None
+            return None, date
 
-        return content
+        return content, date
 
     except Exception as e:
         logger.error(f"Error fetching article content from {link}: {str(e)}")
-        return None
+        return None, None
 
 # Scrape articles using requests and BeautifulSoup
 def get_news(limit_news=20):
@@ -66,25 +74,38 @@ def get_news(limit_news=20):
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    # Select articles from the main page
-    articles = soup.select("div.horizontalPost a")[:limit_news]
-
+    # Select articles from the main page (only article links, not categories)
+    articles = soup.select("div.horizontalPost a[href^='/']")
     list_articles = []
+    visited_urls = set()
+
     for element in articles:
         title = element.get('title')
-        link = base_url.strip("/") + element.get('href')
+        link = element.get('href')
 
-        if title and link:
-            logger.info(f"Fetching content from {link}")
-            content = fetch_article_content(link)
+        # Skip links that lead to categories
+        if not link or '/thoi-su' in link or '/doi-song' in link or '/the-gioi' in link or link in visited_urls:
+            continue
+
+        visited_urls.add(link)  # Mark this URL as visited to avoid repetition
+
+        full_link = base_url.strip("/") + link
+        if title and full_link:
+            logger.info(f"Fetching content from {full_link}")
+            content, date = fetch_article_content(full_link)
 
             if content:
-                # Create an Article object with title, link, and content
+                # Create an Article object with title, link, content, and date
                 list_articles.append(Article(
                     title=title,
-                    link=link,
-                    content=content
+                    link=full_link,
+                    content=content,
+                    date=date
                 ))
+
+        # Stop when we've collected enough articles
+        if len(list_articles) >= limit_news:
+            break
 
     return list_articles
 
@@ -103,7 +124,7 @@ def save_to_mongo(articles):
         new_articles.append({
             'title': article.title,
             'content': article.content,
-            'date': datetime.now(),  # Current date when saving
+            'date': article.date,  # Use the article date
             'source_url': article.link,  # Storing the link as source_url
             'source': 'VietnamNet'  # You can modify the source as needed
         })
