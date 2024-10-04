@@ -80,7 +80,7 @@ def fetch_article_content_and_date(link):
         return None, None
 
 # Scrape articles using requests and BeautifulSoup
-def get_news(limit_news=20):
+def get_news(limit_news=50):
     base_url = "https://vnexpress.net/"
     session = requests.Session()
     response = session.get(base_url)
@@ -147,7 +147,7 @@ def save_to_mongo(articles):
 # Main function to run the scraper
 def scrape_vnexpress():
     logger.info("Starting VNExpress scraper...")
-    articles = get_news(limit_news=20)
+    articles = get_news(limit_news=50)
 
     if not articles:
         logger.warning("No articles found on VNExpress.")

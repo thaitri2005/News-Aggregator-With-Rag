@@ -3,7 +3,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from vnexpress_scraper import scrape_vnexpress
 from tuoitre_scraper import scrape_tuoitre
 from vietnamnet_scraper import scrape_vietnamnet
-from thanhnien_rss import rss_thanhnien
+from thanhnien_rss_scraper import rss_thanhnien
 import time
 
 # Set up logging
