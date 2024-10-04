@@ -1,43 +1,16 @@
-# app/api/scheduler.py
 import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
-from techcrunch_scraper import scrape_techcrunch
-from ycombinator_scraper import scrape_ycombinator
-from theverge_scraper import scrape_theverge
 from vnexpress_scraper import scrape_vnexpress
 from tuoitre_scraper import scrape_tuoitre
 from vietnamnet_scraper import scrape_vietnamnet
+from thanhnien_rss import rss_thanhnien
 import time
 
 # Set up logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-# Scheduler job definitions
-def job_techcrunch():
-    logger.info("Running TechCrunch scraper...")
-    try:
-        scrape_techcrunch()
-        logger.info("TechCrunch scraper completed.")
-    except Exception as e:
-        logger.exception("TechCrunch scraper failed.")
-
-def job_ycombinator():
-    logger.info("Running YCombinator scraper...")
-    try:
-        scrape_ycombinator()
-        logger.info("YCombinator scraper completed.")
-    except Exception as e:
-        logger.exception("YCombinator scraper failed.")
-
-def job_theverge():
-    logger.info("Running The Verge scraper...")
-    try:
-        scrape_theverge()
-        logger.info("The Verge scraper completed.")
-    except Exception as e:
-        logger.exception("The Verge scraper failed.")
-        
+# Scheduler job definitions 
 def job_vnexpress():
     logger.info("Running VNExpress scraper...")
     try:
@@ -62,15 +35,22 @@ def job_vietnamnet():
     except Exception as e:
         logger.exception("Vietnamnet scraper failed.")
 
+def job_thanhnien():
+    logger.info("Running Thanh Niên RSS...")
+    try:
+        rss_thanhnien()
+        logger.info("Thanh Niên RSS completed.")
+    except Exception as e:
+        logger.exception("Thanh Niên RSS failed.")
+        
 if __name__ == "__main__":
     scheduler = BlockingScheduler()
 
-    # scheduler.add_job(job_techcrunch, 'interval', minutes=2)
-    # scheduler.add_job(job_ycombinator, 'interval', minutes=2)
-    # scheduler.add_job(job_theverge, 'interval', minutes=2)
+    # Schedule jobs
     scheduler.add_job(job_vnexpress, 'interval', minutes=3)
     scheduler.add_job(job_tuoitre, 'interval', minutes=3)
     scheduler.add_job(job_vietnamnet, 'interval', minutes=3)
+    scheduler.add_job(job_thanhnien, 'interval', minutes=3)
 
     logger.info("Scheduler started. Press Ctrl+C to exit.")
     try:

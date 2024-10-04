@@ -10,3 +10,4 @@ marshmallow
 lxml
 selenium
 webdriver-manager
+feedparser
