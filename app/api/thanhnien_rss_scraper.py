@@ -130,4 +130,4 @@ def scrape_thanhnien_rss():
     logger.info("RSS scraper for Thanh Niên completed.")
 
 if __name__ == "__main__":
-    rss_thanhnien()
+    scrape_thanhnien_rss()
