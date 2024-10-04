@@ -2,8 +2,8 @@ import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
 from vnexpress_scraper import scrape_vnexpress
 from tuoitre_scraper import scrape_tuoitre
-from vietnamnet_scraper import scrape_vietnamnet_rss
-from thanhnien_rss_scraper import rss_thanhnien
+from vietnamnet_rss_scraper import scrape_vietnamnet_rss
+from thanhnien_rss_scraper import scrape_thanhnien_rss
 import time
 
 # Set up logging
@@ -38,7 +38,7 @@ def job_vietnamnet():
 def job_thanhnien():
     logger.info("Running Thanh Niên RSS...")
     try:
-        rss_thanhnien()
+        scrape_thanhnien_rss()
         logger.info("Thanh Niên RSS completed.")
     except Exception as e:
         logger.exception("Thanh Niên RSS failed.")

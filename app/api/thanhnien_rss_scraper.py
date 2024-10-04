@@ -114,7 +114,7 @@ def save_to_mongo(articles):
         logger.info("No new articles were added from RSS feed.")
 
 # Main function to run the RSS scraper for multiple feeds
-def rss_thanhnien():
+def scrape_thanhnien_rss():
     logger.info("Starting RSS scraper for Thanh Niên...")
 
     for feed_name, feed_url in RSS_FEEDS.items():
