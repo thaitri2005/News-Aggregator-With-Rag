@@ -1,8 +1,10 @@
+#app/api/rag_model.py
 import os
 import logging
 from pymongo import TEXT
 from pymongo.errors import PyMongoError
 import re
+import unicodedata
 
 from bson import ObjectId
 from utils import convert_objectid_to_str
@@ -10,10 +12,21 @@ from database import db
 
 logger = logging.getLogger(__name__)
 
+def normalize_text(text):
+    """
+    Normalize Vietnamese text by removing diacritics, converting to lowercase, 
+    and removing unnecessary punctuation. This improves search accuracy.
+    """
+    # Normalize diacritics and convert to lowercase
+    normalized_text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8').lower()
+    # Remove any non-word characters
+    sanitized_text = re.sub(r'[^\w\s]', '', normalized_text)
+    return sanitized_text.strip()
+
 def create_text_index():
     """
-    Ensures that a text index on the 'title' and 'content' fields of the articles collection exists, 
-    with even higher priority given to the 'title'.
+    Ensures that a text index on the 'title' and 'content' fields of the articles collection exists,
+    with higher priority given to the 'title'.
     """
     try:
         articles_collection = db.get_collection('articles')
@@ -39,15 +52,15 @@ def create_text_index():
         if conflicting_index and not index_exists:
             articles_collection.drop_index(conflicting_index)
 
-        # Create a weighted index, giving a significantly higher weight to 'title'
+        # Create a weighted index, giving a higher weight to 'title'
         if not index_exists:
             articles_collection.create_index(
                 [("title", "text"), ("content", "text")],
-                weights={"title": 20, "content": 5},  # Even higher weight for title
+                weights={"title": 20, "content": 5},  # Higher weight for 'title'
                 name="title_content_text_index",
-                default_language="vietnamese"  # Use Vietnamese as the default language
+                default_language="none"  # For better control, avoid using Mongo's language analyzer
             )
-            logger.info("Text index with even higher priority on 'title' created successfully.")
+            logger.info("Text index with priority on 'title' created successfully.")
         else:
             logger.info("Text index on 'title' and 'content' already exists.")
 
@@ -55,17 +68,21 @@ def create_text_index():
         logger.exception(f"Failed to create text index: {e}")
 
 def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc', filters=None):
+    """
+    Retrieves articles from the MongoDB collection using both regex-based and full-text search.
+    The title is prioritized with higher ranking, and pagination and sorting are applied.
+    """
     try:
         articles_collection = db.get_collection('articles')
 
-        # Sanitize and prioritize the query
-        sanitized_query = re.sub(r'[^\w\s]', '', query)
+        # Normalize and prioritize the query for Vietnamese text
+        normalized_query = normalize_text(query)
 
-        # MongoDB full-text search with weighted priority on title
-        text_search_query = {"$text": {"$search": sanitized_query}}
+        # MongoDB full-text search with weighted priority on title and content
+        text_search_query = {"$text": {"$search": normalized_query}}
 
-        # Separate regex-based search for the title (for exact or partial matches in the title)
-        title_regex_query = {"title": {"$regex": sanitized_query, "$options": "i"}}
+        # Separate regex-based search for title (for exact or partial matches)
+        title_regex_query = {"title": {"$regex": normalized_query, "$options": "i"}}
 
         # Execute title search first (prioritize title matches)
         title_search_results = articles_collection.find(
@@ -80,7 +97,7 @@ def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc', fil
             }
         ).sort([("date", -1)]).skip((page - 1) * limit).limit(limit)
 
-        # Execute full-text search (search both title and content, with title weighted higher)
+        # Execute full-text search (search both title and content)
         text_search_results = articles_collection.find(
             text_search_query,
             {
@@ -93,22 +110,24 @@ def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc', fil
             }
         ).sort([("score", {"$meta": "textScore"} if sort_by == 'score' else -1)]).skip((page - 1) * limit).limit(limit)
 
-        # Combine title-based and content-based results, prioritizing title matches
+        # Combine title-based and content-based results, prioritize title matches
         combined_results = list(title_search_results) + list(text_search_results)
 
         # Ensure results contain the actual query (keyword-based filtering)
         filtered_results = [
             article for article in combined_results
-            if sanitized_query.lower() in article.get('title', '').lower() or sanitized_query.lower() in article.get('content', '').lower()
+            if normalized_query in normalize_text(article.get('title', '')) or
+               normalized_query in normalize_text(article.get('content', ''))
         ]
 
-        # Remove duplicates by ObjectId and prioritize title-based matches
+        # Remove duplicates by ObjectId, prioritize title-based matches
         unique_results = {str(result['_id']): result for result in filtered_results}
 
-        # Ensure pagination is applied
-        articles = list(unique_results.values())[:limit]
+        # Pagination: Apply page size and limit to the final results
+        paginated_results = list(unique_results.values())[:limit]
 
-        return articles
+        return paginated_results
+
     except PyMongoError as e:
         logger.exception(f"Failed to retrieve articles: {e}")
         return []
