@@ -1,8 +1,8 @@
-# **RAG-based AI News Aggregator**
+# **Vietnamese RAG-based AI News Aggregator**
 
 ## **Project Overview**
 
-This project is a Retrieval-Augmented Generation (RAG) based AI News Aggregator that scrapes news articles from various sources, provides an interface for users to search for news, and uses AI (via the Google Gemini API) to generate article summaries. The application consists of a React frontend and a Flask backend, with MongoDB used as the database and Docker for containerization.
+This project is a Vietnamese Retrieval-Augmented Generation (RAG) based AI News Aggregator that scrapes news articles from various sources, provides an interface for users to search for news, and uses AI (via the Google Gemini API) to generate article summaries. The backend is built based on the MVC structure with Flask, the frontend with React, MongoDB is used as the database, and Docker is used for containerization.
 
 ## **Features**
 
@@ -55,10 +55,10 @@ Before you begin, ensure you have the following installed:
     ```
 
     This command will:
-    - Build the backend service (Flask API)
-    - Build the frontend service (React app)
-    - Build the scheduler service (for scheduling scrapers)
-    - Start all services in the app-network
+    - Build and start the backend (Flask API)
+    - Build and start the frontend (React app)
+    - Start the scheduler service (for crawling articles)
+    - Set up the entire application network
 
     **Step 2: Access the Application**
     - Frontend: Visit [http://localhost:3000](http://localhost:3000) in your browser.
@@ -68,14 +68,14 @@ Before you begin, ensure you have the following installed:
 
 ## **Available Endpoints (Backend)**
 
-### **GET /articles**
+### **GET /api/articles**
 
 - **Description**: Retrieves a list of all articles in the database.
 - **Response**:
   - 200 OK: Returns a list of articles with `_id`, `title`, `content`, `date`, `source_url`, and `source`.
   - 500 Internal Server Error: If something goes wrong during the fetch process.
 
-### **GET /articles/_id**
+### **GET /api/articles/_id**
 
 - **Description**: Fetches a specific article by its ID.
 - **Parameters**: `id` (path parameter) – MongoDB ObjectID of the article.
@@ -85,7 +85,7 @@ Before you begin, ensure you have the following installed:
   - 404 Not Found: Article with the given ID not found.
   - 500 Internal Server Error: If something goes wrong.
 
-### **POST /articles**
+### **POST /api/articles**
 
 - **Description**: Adds a new article to the database.
 - **Request Body** (JSON):
@@ -104,14 +104,14 @@ Before you begin, ensure you have the following installed:
   - 400 Bad Request: Invalid or missing input data.
   - 500 Internal Server Error: If something goes wrong during insertion.
 
-### **GET /summaries**
+### **GET /api/summaries**
 
 - **Description**: Fetches all available article summaries in the database.
 - **Response**:
   - 200 OK: Returns a list of summaries.
   - 500 Internal Server Error: If something goes wrong during the fetch process.
 
-### **POST /summarize**
+### **POST /api/summarize**
 
 - **Description**: Generates a summary for a specific article. If the summary already exists in the database, it will return the stored summary.
 - **Request Body** (JSON):
@@ -128,14 +128,14 @@ Before you begin, ensure you have the following installed:
   - 404 Not Found: Article not found.
   - 500 Internal Server Error: If something goes wrong during summarization or while saving the summary.
 
-### **GET /queries**
+### **GET /api/queries**
 
 - **Description**: Retrieves all saved queries.
 - **Response**:
   - 200 OK: Returns a list of queries.
   - 500 Internal Server Error: If something goes wrong during the fetch process.
 
-### **POST /queries**
+### **POST /api/queries**
 
 - **Description**: Adds a new query to the database.
 - **Request Body** (JSON):
@@ -152,7 +152,7 @@ Before you begin, ensure you have the following installed:
   - 400 Bad Request: Invalid or missing input data.
   - 500 Internal Server Error: If something goes wrong during insertion.
 
-### **POST /retrieve**
+### **POST /api/retrieve**
 
 - **Description**: Retrieves articles that match a search query using MongoDB's text search.
 - **Request Body** (JSON):
