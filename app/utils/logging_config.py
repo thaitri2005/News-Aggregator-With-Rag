@@ -1,12 +1,13 @@
-# app/logging_config.py
+# app/utils/logging_config.py
 import logging
 import logging.config
 import os
 
 def setup_logging():
+    log_file = os.path.join(os.getcwd(), 'app.log')
     logging_config = {
         'version': 1,
-        'disable_existing_loggers': False,  # Keep existing loggers active
+        'disable_existing_loggers': False,
         'formatters': {
             'standard': {
                 'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
@@ -23,11 +24,11 @@ def setup_logging():
                 'level': 'ERROR',
                 'formatter': 'standard',
                 'class': 'logging.FileHandler',
-                'filename': os.path.join(os.getcwd(), 'app.log'),
+                'filename': log_file,
             },
         },
         'loggers': {
-            '': {  # Root logger
+            '': {
                 'handlers': ['console', 'file'],
                 'level': 'INFO',
                 'propagate': True

@@ -1,14 +1,13 @@
 # app/api/routes.py
-
 from flask import Blueprint, jsonify, request, abort
 from database import articles_collection, summaries_collection, queries_collection
 from bson.objectid import ObjectId
 from .gemini_integration import summarize_article
-from .rag_model import retrieve_articles
+from marshmallow import Schema, fields, ValidationError
+from services.search_service import retrieve_articles  # Update import from search_service
 import logging
 
-from utils import convert_objectid_to_str  # Import from utils.py
-from marshmallow import Schema, fields, ValidationError
+from utils.common import convert_objectid_to_str  # Import from utils.py
 
 api = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
@@ -44,25 +43,6 @@ def get_articles():
         logger.exception("Failed to fetch articles.")
         abort(500, description="Internal server error.")
 
-# Get a single article by ID
-@api.route('/articles/<id>', methods=['GET'])
-def get_article(id):
-    try:
-        article_id = ObjectId(id)
-        article = articles_collection.find_one({"_id": article_id})
-        if article:
-            article = convert_objectid_to_str(article)
-            return jsonify(article), 200
-        else:
-            logger.warning(f"Article not found for ID: {id}")
-            abort(404, description="Article not found.")
-    except (ValueError, TypeError) as e:
-        logger.error(f"Invalid article ID: {str(e)}")
-        abort(400, description="Invalid article ID.")
-    except Exception as e:
-        logger.exception("An unexpected error occurred.")
-        abort(500, description="Internal server error.")
-
 # Add a new article
 @api.route('/articles', methods=['POST'])
 def add_article():
@@ -82,48 +62,6 @@ def add_article():
         abort(400, description=ve.messages)
     except Exception as e:
         logger.exception("Failed to add new article.")
-        abort(500, description="Internal server error.")
-
-# Get summaries
-@api.route('/summaries', methods=['GET'])
-def get_summaries():
-    try:
-        summaries = list(summaries_collection.find())
-        summaries = [convert_objectid_to_str(summary) for summary in summaries]
-        return jsonify(summaries), 200
-    except Exception as e:
-        logger.exception("Failed to fetch summaries.")
-        abort(500, description="Internal server error.")
-
-# Get queries
-@api.route('/queries', methods=['GET'])
-def get_queries():
-    try:
-        queries = list(queries_collection.find({}, {"_id": 0}))
-        return jsonify(queries), 200
-    except Exception as e:
-        logger.exception("Failed to fetch queries.")
-        abort(500, description="Internal server error.")
-
-# Add a new query
-@api.route('/queries', methods=['POST'])
-def add_query():
-    try:
-        data = request.get_json()
-        if not data:
-            logger.error("No input data provided.")
-            abort(400, description="No input data provided.")
-
-        query_schema = QuerySchema()
-        validated_data = query_schema.load(data)
-        queries_collection.insert_one(validated_data)
-        logger.info("Query added successfully.")
-        return jsonify({"message": "Query added successfully"}), 201
-    except ValidationError as ve:
-        logger.error(f"Validation error: {ve.messages}")
-        abort(400, description=ve.messages)
-    except Exception as e:
-        logger.exception("Failed to add new query.")
         abort(500, description="Internal server error.")
 
 # Summarize article
@@ -153,26 +91,20 @@ def summarize():
         article_text = article.get("content")
         summary = summarize_article(article_text)
 
-        # Check if the response is an error message before saving
-        if "error" in summary.lower() or "quota" in summary.lower() or "internal" in summary.lower():
-            # Log that we won't store this as a summary
-            logger.error(f"Failed to summarize article {article_id}, error message: {summary}")
-            return jsonify({"summary": summary}), 500
+        # Handle errors from the summarization service
+        if "error" in summary.lower():
+            logger.error(f"Failed to summarize article {article_id}.")
+            return jsonify({"error": summary}), 500
 
-        # Update the article document with the generated summary if it's valid
-        articles_collection.update_one(
-            {"_id": ObjectId(article_id)},
-            {"$set": {"summary": summary}}
-        )
-
-        logger.info(f"Article summarized and stored successfully for article {article_id}.")
+        # Update the article document with the generated summary
+        articles_collection.update_one({"_id": ObjectId(article_id)}, {"$set": {"summary": summary}})
         return jsonify({"summary": summary}), 200
 
     except Exception as e:
         logger.exception("An error occurred during summarization.")
-        abort(500, description="An error occurred while processing the article summary.")
+        abort(500, description="Internal server error.")
 
-# Retrieve articles based on a search query, prioritizing title
+# Retrieve articles based on a search query
 @api.route('/retrieve', methods=['POST'])
 def retrieve():
     try:
@@ -181,64 +113,27 @@ def retrieve():
             logger.error("No input data provided.")
             abort(400, description="No input data provided.")
 
-        # Validate input data using marshmallow schema
         retrieve_schema = RetrieveSchema()
         validated_data = retrieve_schema.load(data)
 
-        query = validated_data.get('query').strip()  # Remove unnecessary spaces
+        query = validated_data.get('query').strip()
         page = validated_data.get('page')
         limit = validated_data.get('limit')
-        sort_by = validated_data.get('sort_by') or 'score'  # Sort by text score (relevance)
-        order = validated_data.get('order') or 'desc'
+        sort_by = validated_data.get('sort_by')
+        order = validated_data.get('order')
 
-        # Determine the sorting order for MongoDB
-        sort_order = -1 if order == 'desc' else 1  # Default to descending for latest first
+        articles = retrieve_articles(query, page, limit, sort_by, order)
 
-        # MongoDB allows for text search using $text index for full-text search
-        skip = (page - 1) * limit
-
-        # Perform the search in MongoDB using text search and pagination
-        search_conditions = {"$text": {"$search": query}}
-        # Retrieve articles, sorted by text score (relevance) or date
-        articles = list(articles_collection.find(
-            search_conditions,
-            {"score": {"$meta": "textScore"}}  # Include the score from the text index
-        ).sort([("score", {"$meta": "textScore"}), (sort_by, sort_order)])  # Sort by text relevance and then date
-        .skip(skip).limit(limit))
-
-        # If articles are found, convert ObjectId to strings
         if articles:
             articles = [convert_objectid_to_str(article) for article in articles]
             return jsonify(articles), 200
         else:
             logger.info("No articles found matching the query.")
             return jsonify({"message": "No articles found"}), 404
+
     except ValidationError as ve:
         logger.error(f"Validation error: {ve.messages}")
         abort(400, description=ve.messages)
     except Exception as e:
         logger.exception("An error occurred during article retrieval.")
         abort(500, description="Internal server error.")
-
-
-
-# Error handler for 400 Bad Request
-@api.errorhandler(400)
-def bad_request(error):
-    response = jsonify({"error": str(error.description)})
-    response.status_code = 400
-    return response
-
-# Error handler for 404 Not Found
-@api.errorhandler(404)
-def not_found(error):
-    response = jsonify({"error": str(error.description)})
-    response.status_code = 404
-    return response
-
-# Error handler for 500 Internal Server Error
-@api.errorhandler(500)
-def internal_error(error):
-    response = jsonify({"error": str(error.description)})
-    response.status_code = 500
-    return response
