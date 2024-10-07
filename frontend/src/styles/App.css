@@ -19,7 +19,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: white;
+  background-color: #ffffff;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -37,7 +37,7 @@ body {
 
 .search-button {
   height: 55px;
-  background-color: #1a73e8;
+  background-color: #1976d2;
 }
 
 .search-button:hover {
@@ -50,13 +50,24 @@ body {
   font-weight: 500;
 }
 
+.filter-container {
+  display: flex;
+  justify-content: flex-start;
+  gap: 15px;
+  margin-top: 15px; /* Add vertical spacing from search bar */
+}
+
+.sort-select, .order-select {
+  min-width: 150px;
+}
+
 .articles-list {
   margin-top: 30px;
 }
 
 .article-card {
   margin: 20px 0;
-  background-color: white;
+  background-color: #ffffff;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   border-radius: 12px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;

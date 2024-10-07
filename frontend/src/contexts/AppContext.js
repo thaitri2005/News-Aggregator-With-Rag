@@ -1,6 +1,6 @@
-/* frontend/src/AppContext.js */
+// frontend/src/contexts/AppContext.js
 import React, { createContext, useContext, useReducer } from 'react';
-import { searchArticles as searchApi, summarizeArticle as summarizeApi } from '../services/api';
+import { searchArticles, summarizeArticle } from '../services/api';
 
 // Initial state
 const initialState = {
@@ -11,7 +11,9 @@ const initialState = {
   loading: false,
   error: null,
   page: 1,
-  hasMore: true, // Track if there are more articles to load
+  hasMore: true,
+  sort_by: 'score',
+  order: 'desc',
 };
 
 // Reducer function to manage state
@@ -22,14 +24,14 @@ const reducer = (state, action) => {
         ...state, 
         searchQuery: action.payload, 
         page: 1, 
-        articles: [], // Reset articles on new search
-        hasMore: true, // Reset hasMore when new search is triggered
+        articles: [], 
+        hasMore: true, 
       };
     case 'SET_ARTICLES':
       return { 
         ...state, 
-        articles: [...state.articles, ...action.payload], // Append new articles
-        page: state.page + 1,  // Increment page
+        articles: [...state.articles, ...action.payload], 
+        page: state.page + 1, 
       };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
@@ -54,47 +56,76 @@ export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   // Function to search articles
-  const searchArticles = async (query, page = 1) => {
+  const searchArticlesWithOptions = async (
+    query, 
+    page = 1, 
+    limit = 5, 
+    sort_by = 'score', 
+    order = 'desc', 
+    filters = {}
+  ) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      const articles = await searchApi(query, page, 5); // Limit set to 5 articles per page
-      dispatch({ type: 'SET_ARTICLES', payload: articles });
+      const response = await searchArticles(query, page, limit, sort_by, order);
       
+      // Debug: Log the response
+      console.log('Articles fetched:', response);
+
+      dispatch({ type: 'SET_ARTICLES', payload: response });
+
       // Check if there are more articles to load
-      dispatch({ type: 'SET_HAS_MORE', payload: articles.length > 0 });
+      dispatch({ type: 'SET_HAS_MORE', payload: response.length > 0 });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'An error occurred while fetching the articles' });
+      console.error('Error fetching articles:', error.message);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+      // Optionally, you can also reset articles and hasMore
+      dispatch({ type: 'SET_ARTICLES', payload: [] });
+      dispatch({ type: 'SET_HAS_MORE', payload: false });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
   // Function to load more articles (for lazy loading)
-  const loadMoreArticles = async (query, page) => {
+  const loadMoreArticles = async (
+    query, 
+    page, 
+    limit = 5, 
+    sort_by = 'score', 
+    order = 'desc', 
+    filters = {}
+  ) => {
     if (!state.hasMore || state.loading) return; // Prevent duplicate loading
-    searchArticles(query, page);
+    await searchArticlesWithOptions(query, page, limit, sort_by, order, filters);
   };
 
-  // Function to fetch the summary of an article
+  // Function to fetch summary of an article
   const fetchSummary = async (article) => {
     dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+
     try {
-      const summaryResponse = await summarizeApi(article._id);  // Call API for summary
+      const response = await summarizeArticle(article._id);
+
+      // Debug: Log the summary
+      console.log('Article summary:', response);
+
       dispatch({
         type: 'SET_SELECTED_ARTICLE',
-        payload: { ...article, summary: summaryResponse.summary || 'No summary available' },
+        payload: { ...article, summary: response.summary || 'No summary available.' },
       });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to load summary' });
+      console.error('Error fetching summary:', error.message);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
   return (
-    <AppContext.Provider value={{ state, dispatch, searchArticles, fetchSummary, loadMoreArticles }}>
+    <AppContext.Provider value={{ state, dispatch, searchArticlesWithOptions, fetchSummary, loadMoreArticles }}>
       {children}
     </AppContext.Provider>
   );
