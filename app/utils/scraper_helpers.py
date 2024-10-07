@@ -10,7 +10,7 @@ def clean_html(html):
     """
     Cleans HTML content by removing tags and returning plain text.
     """
-    # Check if the input looks like a file path or URL (which BeautifulSoup might misinterpret)
+    # Check if the input looks like a file path or URL
     if isinstance(html, str) and (html.startswith(('http://', 'https://', '/', './', '../'))):
         logger.warning("Input resembles a file path or URL. Check the source of the HTML content.")
         return ""
@@ -32,13 +32,12 @@ def fetch_article_content_and_date(url, content_selector):
         
         content = article_content.get_text(separator="\n").strip()
 
-        # Extract publication date: Legacy logic adaptation
+        # Extract publication date
         pub_date_str = None
         pub_date = None
         
-        # Focusing more on potential common classes and meta tags
         date_selectors = [
-            'div.publish-date',  # Legacy logic selector
+            'div.publish-date',  
             'time', 
             'meta[property="article:published_time"]',
             'meta[name="pubdate"]', 'meta[name="og:pubdate"]',
@@ -59,7 +58,6 @@ def fetch_article_content_and_date(url, content_selector):
             logger.warning(f"Date not found for {url}, using current datetime.")
             pub_date = datetime.now()
         else:
-            # Add a new date format to handle the pattern '03/10/2024 - 09:10'
             date_formats = [
                 '%a, %d %b %Y %H:%M:%S %z',  # RSS common format
                 '%a, %d %b %y %H:%M:%S %z',

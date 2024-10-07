@@ -40,9 +40,9 @@ def summarize_article(article_text, max_retries=3):
         "response_mime_type": "text/plain",
     }
 
-    # Define the model to use with the Gemini API
+    # Define the model to use for summarization
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",  # Using "flash" model for better quota management
+        model_name="gemini-1.5-flash", 
         generation_config=generation_config,
     )
 

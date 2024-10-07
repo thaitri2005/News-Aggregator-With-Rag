@@ -2,8 +2,12 @@
 from pymongo.errors import PyMongoError
 from utils.common import normalize_text, get_mongo_collection
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+# Vietnamese stopwords 
+STOPWORDS_VIETNAMESE = {"và", "là", "của", "cái", "những", "các", "với", "vào", "được", "đến", "từ", "có", "trong", "để", "thì"}
 
 def create_text_index():
     """
@@ -38,26 +42,74 @@ def create_text_index():
         logger.error(f"Failed to create text index: {e}")
         raise Exception("Could not create the text index.")
 
-def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc'):
+
+def normalize_vietnamese_text(query):
+    """
+    A more sophisticated normalization for Vietnamese text.
+    Removes diacritics, lowercases, and handles stopwords.
+    """
+    normalized_query = normalize_text(query)  # Basic normalization (removing diacritics)
+    
+    # Tokenize the query and remove stopwords
+    tokens = [word for word in normalized_query.split() if word not in STOPWORDS_VIETNAMESE]
+    
+    return ' '.join(tokens)
+
+
+def retrieve_articles(query, page=1, limit=5, sort_by='score', order='desc', filters=None):
+    """
+    Retrieves articles from the MongoDB collection using full-text search and additional filters.
+    Supports sorting by relevance (text score) or date and pagination.
+    """
     collection = get_mongo_collection('newsdb', 'articles')
     try:
-        # Ensure the query is normalized
-        normalized_query = normalize_text(query)
+        # Normalize and clean the query for Vietnamese
+        normalized_query = normalize_vietnamese_text(query)
 
-        # Use $text to search with MongoDB's full-text search capabilities
+        # Full-text search using $text
         search_conditions = {"$text": {"$search": normalized_query}}
+
+        # Apply additional filters if provided (e.g., date range, source)
+        if filters:
+            if "from_date" in filters and "to_date" in filters:
+                try:
+                    from_date = datetime.strptime(filters["from_date"], "%Y-%m-%d")
+                    to_date = datetime.strptime(filters["to_date"], "%Y-%m-%d")
+                    search_conditions["date"] = {"$gte": from_date, "$lte": to_date}
+                except ValueError:
+                    logger.warning("Invalid date format in filters. Ignoring date filters.")
+            if "source" in filters:
+                search_conditions["source"] = {"$regex": filters["source"], "$options": "i"}
 
         skip = (page - 1) * limit
         sort_order = -1 if order == 'desc' else 1
 
-        # Execute the search with $meta textScore for relevance-based sorting
+        # Sort by score (relevance) or date
+        sort_criteria = [("score", {"$meta": "textScore"})] if sort_by == 'score' else [("date", sort_order)]
+
+        # Execute the search
         articles = list(
             collection.find(search_conditions, {"score": {"$meta": "textScore"}})
-            .sort([("score", {"$meta": "textScore"})])  # Sort by text score
+            .sort(sort_criteria)
             .skip(skip)
             .limit(limit)
         )
 
         return articles
+
     except PyMongoError as e:
+        logger.error(f"Failed to retrieve articles: {e}")
         raise Exception(f"Failed to retrieve articles: {str(e)}")
+
+
+def get_search_filters(from_date=None, to_date=None, source=None):
+    """
+    Helper to construct filters for search based on date range and source.
+    """
+    filters = {}
+    if from_date and to_date:
+        filters["from_date"] = from_date
+        filters["to_date"] = to_date
+    if source:
+        filters["source"] = source
+    return filters

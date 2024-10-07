@@ -1,13 +1,12 @@
-# app/api/routes.py
 from flask import Blueprint, jsonify, request, abort
-from database import articles_collection, summaries_collection, queries_collection
+from database import articles_collection
 from bson.objectid import ObjectId
 from .gemini_integration import summarize_article
 from marshmallow import Schema, fields, ValidationError
-from services.search_service import retrieve_articles  # Update import from search_service
+from services.search_service import retrieve_articles, get_search_filters  # Updated import
 import logging
 
-from utils.common import convert_objectid_to_str  # Import from utils.py
+from utils.common import convert_objectid_to_str 
 
 api = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
@@ -29,6 +28,9 @@ class RetrieveSchema(Schema):
     limit = fields.Int(missing=5, validate=lambda n: n > 0)
     sort_by = fields.Str(missing='score', validate=lambda x: x in ['score', 'date'])
     order = fields.Str(missing='desc', validate=lambda x: x in ['asc', 'desc'])
+    from_date = fields.Date(required=False)  # Optional filter
+    to_date = fields.Date(required=False)    # Optional filter
+    source = fields.Str(required=False)      # Optional filter
 
 # Get all articles
 @api.route('/articles', methods=['GET'])
@@ -91,12 +93,12 @@ def summarize():
         article_text = article.get("content")
         summary = summarize_article(article_text)
 
-        # Handle errors from the summarization service
+        # Handle errors
         if "error" in summary.lower():
             logger.error(f"Failed to summarize article {article_id}.")
             return jsonify({"error": summary}), 500
 
-        # Update the article document with the generated summary
+        # Update the article with the new summary
         articles_collection.update_one({"_id": ObjectId(article_id)}, {"$set": {"summary": summary}})
         return jsonify({"summary": summary}), 200
 
@@ -122,7 +124,16 @@ def retrieve():
         sort_by = validated_data.get('sort_by')
         order = validated_data.get('order')
 
-        articles = retrieve_articles(query, page, limit, sort_by, order)
+        # Optional filters
+        from_date = validated_data.get('from_date')
+        to_date = validated_data.get('to_date')
+        source = validated_data.get('source')
+
+        # Pass filters to the search service
+        filters = get_search_filters(from_date, to_date, source)
+
+        # Retrieve articles using the improved search service
+        articles = retrieve_articles(query, page, limit, sort_by, order, filters)
 
         if articles:
             articles = [convert_objectid_to_str(article) for article in articles]
