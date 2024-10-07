@@ -81,7 +81,7 @@ function App() {
     <Container maxWidth="md" className="app-container">
       <Box className="sticky-search-bar">
         <Typography variant="h4" align="center" color="textPrimary" gutterBottom>
-          News Aggregator
+          Vietnamese News Aggregator
         </Typography>
 
         {/* Search Input */}

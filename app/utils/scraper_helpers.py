@@ -1,4 +1,5 @@
 # app/utils/scraper_helpers.py
+import html
 import logging
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -6,17 +7,24 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-def clean_html(html):
+def clean_html(html_content):
     """
     Cleans HTML content by removing tags and returning plain text.
+    Also decodes any HTML entities like &apos; or &amp;.
     """
     # Check if the input looks like a file path or URL
-    if isinstance(html, str) and (html.startswith(('http://', 'https://', '/', './', '../'))):
+    if isinstance(html_content, str) and (html_content.startswith(('http://', 'https://', '/', './', '../'))):
         logger.warning("Input resembles a file path or URL. Check the source of the HTML content.")
         return ""
 
-    soup = BeautifulSoup(html, 'html.parser')
-    return soup.get_text(separator="\n").strip()
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Get the text and decode HTML entities
+    clean_text = soup.get_text(separator="\n").strip()
+    clean_text = html.unescape(clean_text)  # Decode HTML entities like &apos;, &amp;
+
+    return clean_text
 
 
 def fetch_article_content_and_date(url, content_selector):

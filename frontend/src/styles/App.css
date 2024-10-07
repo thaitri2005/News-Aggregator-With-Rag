@@ -1,15 +1,16 @@
 /* frontend/src/App.css */
 body {
   font-family: 'Poppins', sans-serif;
-  background-color: #f4f7fa;
+  background-color: #f0f4f8;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   scroll-behavior: smooth;
+  color: #333;
 }
 
 .app-container {
-  max-width: 100%;
+  max-width: 90%;
   padding: 50px 20px;
   margin: 0 auto;
   border-radius: 8px;
@@ -19,34 +20,43 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #ffffff;
+  background-color: #fff;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 .search-container {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   gap: 10px;
 }
 
 .search-input {
   flex-grow: 1;
+  background-color: #f0f4f8;
 }
 
 .search-button {
   height: 55px;
   background-color: #1976d2;
+  color: white;
+  border-radius: 10px;
+  padding: 0 20px;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .search-button:hover {
-  background-color: #0056b3;
+  background-color: #ffffff; /* White background */
+  color: #1976d2; /* Blue text */
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
 }
 
 .error-message {
   margin-top: 10px;
-  color: red;
+  color: #ff3860;
   font-weight: 500;
 }
 
@@ -54,7 +64,7 @@ body {
   display: flex;
   justify-content: flex-start;
   gap: 15px;
-  margin-top: 15px; /* Add vertical spacing from search bar */
+  margin-top: 20px; /* Increased vertical spacing from search bar */
 }
 
 .sort-select, .order-select {
@@ -68,30 +78,32 @@ body {
 .article-card {
   margin: 20px 0;
   background-color: #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   padding: 20px;
+  cursor: pointer;
 }
 
 .article-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
 }
 
 button {
   background-color: #1a73e8;
   color: white;
-  padding: 12px 18px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 25px;
+  border-radius: 8px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #ffffff; /* White background */
+  color: #1a73e8; /* Blue text */
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
 }
 
@@ -100,7 +112,6 @@ input[type="text"] {
   padding: 12px;
   border: 1px solid #ddd;
   width: 100%;
-  margin-right: 0px;
   transition: border-color 0.3s, box-shadow 0.3s;
 }
 
