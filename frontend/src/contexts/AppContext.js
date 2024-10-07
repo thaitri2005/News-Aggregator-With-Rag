@@ -1,6 +1,6 @@
 /* frontend/src/AppContext.js */
 import React, { createContext, useContext, useReducer } from 'react';
-import axios from 'axios';
+import { searchArticles as searchApi, summarizeArticle as summarizeApi } from '../services/api';
 
 // Initial state
 const initialState = {
@@ -59,16 +59,11 @@ export const AppProvider = ({ children }) => {
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      const response = await axios.post('http://localhost:5000/api/retrieve', {
-        query,
-        page,
-        limit: 5,
-      });
-
-      dispatch({ type: 'SET_ARTICLES', payload: response.data });
+      const articles = await searchApi(query, page, 5); // Limit set to 5 articles per page
+      dispatch({ type: 'SET_ARTICLES', payload: articles });
       
       // Check if there are more articles to load
-      dispatch({ type: 'SET_HAS_MORE', payload: response.data.length > 0 });
+      dispatch({ type: 'SET_HAS_MORE', payload: articles.length > 0 });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'An error occurred while fetching the articles' });
     } finally {
@@ -82,17 +77,14 @@ export const AppProvider = ({ children }) => {
     searchArticles(query, page);
   };
 
-  // Function to fetch summary of an article
+  // Function to fetch the summary of an article
   const fetchSummary = async (article) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const response = await axios.post('http://localhost:5000/api/summarize', {
-        article_id: article._id,  // Pass the article ID
-        article_text: article.content,
-      });
+      const summaryResponse = await summarizeApi(article._id);  // Call API for summary
       dispatch({
         type: 'SET_SELECTED_ARTICLE',
-        payload: { ...article, summary: response.data.summary || 'No summary available' },
+        payload: { ...article, summary: summaryResponse.summary || 'No summary available' },
       });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load summary' });
