@@ -1,7 +1,7 @@
 // frontend/src/App.js
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Container, Box, TextField, Button, CircularProgress, Typography, Select, MenuItem, FormControl, InputLabel,
+  Container, Box, TextField, Button, CircularProgress, Typography, Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
 import Article from './components/Article';
 import { useAppContext } from './contexts/AppContext';
