@@ -188,18 +188,31 @@ Before you begin, ensure you have the following installed:
 
 ## **Technologies Used**
 
-- **Frontend**:
-  - React
-  - Material-UI (MUI) for design and layout
-  - Axios for making HTTP requests to the backend
-  - React Props for data handling and passing between components
 - **Backend**:
   - Flask (Python)
-  - MongoDB (Atlas) for data storage
-  - Marshmallow for input validation
-- **AI Integration**: Google Gemini API for summarizing articles
+  - APScheduler
+  - Pymongo
+  - Flask-CORS
+  - Google Generative AI API - For real-time article summarization.
+  - BeautifulSoup (bs4)
+  - Python Dotenv
+  - Marshmallow
+  - lxml
+  - Selenium + Webdriver-Manager
+  - Feedparser
+- **Frontend**:
+  - React
+  - Material-UI (MUI)
+  - Axios
+  - React Props
+  - Emotion (styled + react)
+  - React Content Loader
+  - CSS Loader + Style Loader
+  - Webpack
+  - Lodash
+- **Database**:
+  - MongoDB
 - **Containerization**: Docker, Docker Compose for deployment
-- **Scheduling**: Python-based scheduler for crawling articles
 
 ---
 
