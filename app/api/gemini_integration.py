@@ -48,8 +48,7 @@ def summarize_article(article_text, max_retries=3):
 
     # Vietnamese summarization prompt
     prompt = (
-        "Tóm tắt bài báo sau bằng tiếng Việt trong vòng 5 câu trở xuống. "
-        "Hãy tóm gọn và chỉ cung cấp tóm tắt mà không thêm thông tin hoặc ngữ cảnh phụ."
+        "Tóm tắt bài báo sau bằng tiếng Việt, khách quan và ngắn gọn trong không quá 4 câu. Chỉ tập trung vào các sự kiện chính và thông tin nổi bật. Đảm bảo giọng văn nghiêm túc, chuẩn mực và không thêm suy đoán hoặc ý kiến cá nhân."
     )
 
     for attempt in range(max_retries):
