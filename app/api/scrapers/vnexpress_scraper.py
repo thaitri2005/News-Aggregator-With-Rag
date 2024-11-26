@@ -1,7 +1,7 @@
+#app/api/scrapers/vnexpress_scraper.py
 import requests
 from bs4 import BeautifulSoup
 import logging
-from services.mongo_service import save_articles
 from services.article_processor import ArticleProcessor  # Import ArticleProcessor
 from models.article_model import Article
 from utils.scraper_helpers import fetch_article_content_and_date, extract_article_links
@@ -13,9 +13,7 @@ article_processor = ArticleProcessor()
 
 def scrape_vnexpress():
     """
-    Scrape VNExpress articles from the homepage.
-    - Saves articles to MongoDB.
-    - Processes articles for vectorization and stores them in the vector database.
+    Scrape VNExpress articles from the homepage and process them for vectorization.
     """
     base_url = "https://vnexpress.net/"
     try:
@@ -53,10 +51,6 @@ def scrape_vnexpress():
                 new_articles.append(article_obj.to_dict())
 
         if new_articles:
-            # Save articles to MongoDB
-            save_articles("articles", new_articles)
-            logger.info(f"Saved {len(new_articles)} articles from VNExpress to MongoDB.")
-
             # Process and store articles in vector database
             for article in new_articles:
                 try:
@@ -65,7 +59,7 @@ def scrape_vnexpress():
                 except Exception as e:
                     logger.error(f"Failed to process article '{article['title']}': {e}")
         else:
-            logger.warning("No valid articles to save from VNExpress.")
+            logger.warning("No valid articles to process from VNExpress.")
 
     except Exception as e:
         logger.error(f"Error while scraping VNExpress: {e}")

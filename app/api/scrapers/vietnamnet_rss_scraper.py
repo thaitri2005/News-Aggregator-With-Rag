@@ -2,7 +2,6 @@
 import feedparser
 import logging
 from datetime import datetime
-from services.mongo_service import save_articles
 from services.article_processor import ArticleProcessor  # Import ArticleProcessor
 from models.article_model import Article
 from utils.scraper_helpers import clean_html, fetch_article_content_and_date
@@ -65,30 +64,29 @@ def fetch_rss_articles(feed_name, feed_url):
 
 def scrape_vietnamnet_rss():
     """
-    Scrape VietnamNet articles using RSS feeds.
-    - Saves articles to MongoDB.
-    - Processes articles for vectorization and stores them in the vector database.
+    Scrape VietnamNet articles using RSS feeds and store them in the vector database.
     """
     logger.info("Starting VietnamNet RSS scraper...")
+    total_articles = 0
+
     for feed_name, feed_url in RSS_FEEDS.items():
         articles = fetch_rss_articles(feed_name, feed_url)
 
         if articles:
-            # Step 1: Save articles to MongoDB
-            save_articles('articles', articles)
-            logger.info(f"Saved {len(articles)} articles from {feed_name} to MongoDB.")
-
-            # Step 2: Process and store articles in the vector database
             for article in articles:
                 try:
                     article_processor.process_and_store_article(article)
                     logger.info(f"Processed and stored article '{article['title']}' in vector DB.")
                 except Exception as e:
                     logger.error(f"Failed to process article '{article['title']}': {e}")
+            total_articles += len(articles)
         else:
             logger.warning(f"No articles found in {feed_name} feed.")
 
-    logger.info("VietnamNet RSS scraper completed.")
+    if total_articles:
+        logger.info(f"Total {total_articles} articles processed and stored from VietnamNet feeds.")
+    else:
+        logger.info("No valid articles found to process from VietnamNet feeds.")
 
 if __name__ == "__main__":
     scrape_vietnamnet_rss()

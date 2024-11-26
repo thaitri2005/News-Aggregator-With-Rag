@@ -18,12 +18,33 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY is not set")
 
 # Configure the Gemini API
-genai.configure(api_key=api_key)
+try:
+    genai.configure(api_key=api_key)
+    logger.info("Gemini API configured successfully.")
+except Exception as e:
+    logger.exception("Failed to configure Gemini API.")
+    raise
 
-def summarize_article(article_text, max_retries=3):
+def summarize_article(article_text, max_retries=3, prompt=None):
     """
     Summarizes an article using the Gemini API.
+    :param article_text: The full text of the article to summarize.
+    :param max_retries: Number of retries in case of API errors.
+    :param prompt: Custom prompt for summarization (optional).
+    :return: Summarized text or an error message.
     """
+    if not article_text or len(article_text.strip()) == 0:
+        logger.warning("Empty or invalid article text provided.")
+        return "No content to summarize."
+
+    if prompt is None:
+        # Default prompt for summarization
+        prompt = (
+            "Tóm tắt bài báo sau bằng tiếng Việt, khách quan và ngắn gọn trong không quá 4 câu. "
+            "Chỉ tập trung vào các sự kiện chính và thông tin nổi bật. "
+            "Đảm bảo giọng văn nghiêm túc, chuẩn mực và không thêm suy đoán hoặc ý kiến cá nhân."
+        )
+
     generation_config = {
         "temperature": 0.5,
         "top_p": 0.8,
@@ -34,26 +55,22 @@ def summarize_article(article_text, max_retries=3):
 
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash", 
+            model_name="gemini-1.5-flash",
             generation_config=generation_config,
         )
+        logger.info("Gemini GenerativeModel initialized successfully.")
     except Exception as e:
         logger.exception("Failed to initialize Gemini GenerativeModel.")
         return "Failed to initialize Gemini API. Please check your configuration."
 
-    prompt = (
-        "Tóm tắt bài báo sau bằng tiếng Việt, khách quan và ngắn gọn trong không quá 4 câu. "
-        "Chỉ tập trung vào các sự kiện chính và thông tin nổi bật. "
-        "Đảm bảo giọng văn nghiêm túc, chuẩn mực và không thêm suy đoán hoặc ý kiến cá nhân."
-    )
-
     for attempt in range(max_retries):
         try:
+            logger.info(f"Attempt {attempt + 1}: Summarizing article with {len(article_text)} characters.")
             chat_session = model.start_chat(history=[])
             response = chat_session.send_message(f"{prompt}\n\n{article_text}")
             summary = response.text.strip()
 
-            # Return cleaned summary
+            logger.info("Article summarized successfully.")
             return summary.replace("Tóm tắt:", "").strip()
 
         except (google_exceptions.ResourceExhausted, google_exceptions.InternalServerError,

@@ -44,7 +44,7 @@ def add_article():
         vector = vector_db.vectorizer.encode_text(validated_data["content"]).tolist()
         metadata = {
             "title": validated_data["title"],
-            "content": validated_data["content"],
+            "chunk": validated_data["content"],  # Store under 'chunk'
             "source_url": validated_data["source_url"],
             "date": validated_data["date"],
             "source": validated_data["source"],
@@ -56,7 +56,7 @@ def add_article():
             ]
         )
 
-        logger.info("Article added successfully to Pinecone.")
+        logger.info(f"Article '{validated_data['title']}' added successfully to Pinecone.")
         return jsonify({"message": "Article added successfully"}), 201
     except ValidationError as ve:
         logger.error(f"Validation error: {ve.messages}")
@@ -81,7 +81,11 @@ def retrieve():
         retrieve_schema = RetrieveSchema()
         validated_data = retrieve_schema.load(data)
 
-        query = validated_data["query"]
+        query = validated_data["query"].strip()
+        if not query:
+            logger.error("Empty query provided.")
+            abort(400, description="Query cannot be empty.")
+
         page = validated_data["page"]
         limit = validated_data["limit"]
         sort_by = validated_data["sort_by"]
@@ -91,18 +95,22 @@ def retrieve():
         pinecone_results = vector_db.query_vectors(query, top_k=limit)
 
         # Prepare articles with metadata
-        articles = [
-            {
+        articles = []
+        for result in pinecone_results:
+            metadata = result["metadata"]
+            if not metadata.get("chunk"):  # Use 'chunk' instead of 'content'
+                logger.warning(f"Metadata for ID {result['id']} is missing 'chunk'. Skipping.")
+                continue
+
+            articles.append({
                 "id": result["id"],
-                "title": result["metadata"].get("title", ""),
-                "content": result["metadata"].get("content", ""),
-                "source_url": result["metadata"].get("source_url", ""),
-                "date": result["metadata"].get("date", ""),
-                "source": result["metadata"].get("source", ""),
+                "title": metadata.get("title", "Untitled"),
+                "content": metadata.get("chunk", ""),  # Retrieve 'chunk'
+                "source_url": metadata.get("source_url", ""),
+                "date": metadata.get("date", ""),
+                "source": metadata.get("source", "Unknown"),
                 "relevance_score": result["score"],
-            }
-            for result in pinecone_results
-        ]
+            })
 
         # Sort articles
         if sort_by == "date":
@@ -112,9 +120,10 @@ def retrieve():
 
         # Pagination
         start_index = (page - 1) * limit
-        articles = articles[start_index : start_index + limit]
+        paginated_articles = articles[start_index : start_index + limit]
 
-        return jsonify(articles), 200
+        logger.info(f"Retrieved {len(paginated_articles)} articles for query '{query}'.")
+        return jsonify(paginated_articles), 200
 
     except ValidationError as ve:
         logger.error(f"Validation error: {ve.messages}")
@@ -124,55 +133,66 @@ def retrieve():
         abort(500, description="Internal server error.")
 
 
-@api.route("/summarize", methods=["POST"])
-def summarize():
-    """
-    Summarizes an article using the Gemini API.
-    """
-    try:
-        data = request.get_json()
-        logger.info(f"Received summarize request payload: {data}")  # Add logging
-
-        article_id = data.get("article_id")
-        if not article_id:
-            logger.error("No article ID provided.")
-            abort(400, description="No article ID provided.")
-
-        # Fetch metadata for the article
-        results = vector_db.query_by_id(article_id)
-        if not results:
-            logger.error(f"Article not found with ID: {article_id}")
-            abort(404, description="Article not found.")
-
-        # Extract the content from the first matched result
-        metadata = next(iter(results))["metadata"]
-        article_content = metadata.get("content", "")
-
-        if not article_content:
-            logger.error("Content missing for the article.")
-            abort(404, description="Article content not found.")
-
-        # Summarize the article
-        summary = summarize_article(article_content)
-        if "error" in summary.lower():
-            logger.error(f"Failed to summarize article with ID: {article_id}.")
-            return jsonify({"error": summary}), 500
-
-        return jsonify({"summary": summary}), 200
-
-    except Exception as e:
-        logger.exception("An error occurred during summarization.")
-        abort(500, description="Internal server error.")
-
 @api.route("/clear", methods=["DELETE"])
 def clear_database():
     """
     Deletes all vectors in the specified namespace or the default namespace.
     """
     try:
-        namespace = request.args.get("namespace", "default")
+        namespace = request.args.get("namespace", "default").strip()
+        if not namespace:
+            logger.error("Invalid namespace provided.")
+            abort(400, description="Namespace cannot be empty.")
+
         vector_db.delete_all(namespace=namespace)
+        logger.info(f"All vectors in namespace '{namespace}' have been deleted.")
         return jsonify({"message": f"All vectors in namespace '{namespace}' have been deleted."}), 200
     except Exception as e:
         logger.error("Failed to clear the Pinecone database.")
         abort(500, description="Failed to clear the Pinecone database.")
+
+@api.route("/summarize", methods=["POST"])
+def summarize():
+    """
+    Summarizes an article using the Gemini API.
+    """
+    try:
+        # Log the incoming request
+        data = request.get_json()
+        logger.debug(f"Received summarize request payload: {data}")
+
+        if not data:
+            logger.error("No input data provided.")
+            abort(400, description="No input data provided.")
+
+        article_id = data.get("article_id")
+        if not article_id:
+            logger.error("No article ID provided in the request.")
+            abort(400, description="No article ID provided.")
+
+        # Fetch metadata for the article by its ID
+        results = vector_db.query_by_id(article_id)
+        if not results:
+            logger.error(f"Article not found with ID: {article_id}")
+            abort(404, description="Article not found.")
+
+        # Extract the content from the metadata
+        metadata = next(iter(results))["metadata"]
+        article_content = metadata.get("chunk", "")  # Use 'chunk' instead of 'content'
+
+        if not article_content:
+            logger.error(f"Content is missing for article with ID: {article_id}")
+            abort(404, description="Article content not found.")
+
+        # Summarize the article using Gemini API
+        summary = summarize_article(article_content)
+        if "error" in summary.lower():
+            logger.error(f"Failed to summarize article with ID: {article_id}.")
+            return jsonify({"error": summary}), 500
+
+        logger.info(f"Summarized article with ID: {article_id}.")
+        return jsonify({"summary": summary}), 200
+
+    except Exception as e:
+        logger.exception("An error occurred during summarization.")
+        abort(500, description="Internal server error.")

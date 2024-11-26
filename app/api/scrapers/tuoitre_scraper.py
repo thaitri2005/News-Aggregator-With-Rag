@@ -1,10 +1,9 @@
-# app/api/scrapers/tuoitre_scraper.py
+#app/api/scrapers/tuoitre_scraper.py
 import logging
 from bs4 import BeautifulSoup
 import feedparser
 from datetime import datetime
 import requests
-from services.mongo_service import save_articles
 from services.article_processor import ArticleProcessor  # Import ArticleProcessor
 from models.article_model import Article
 from utils.scraper_helpers import fetch_article_content_and_date, clean_html
@@ -80,34 +79,30 @@ def fetch_rss_articles(feed_name, feed_url):
 
 def scrape_tuoitre():
     """
-    Scrape Tuổi Trẻ articles using RSS feeds.
+    Scrape Tuổi Trẻ articles using RSS feeds and store them in the vector database.
     """
     logger.info("Starting Tuổi Trẻ RSS scraper...")
-    new_articles = []
+    total_articles = 0
 
     for feed_name, feed_url in RSS_FEEDS.items():
         logger.info(f"Fetching articles from {feed_name} RSS feed...")
         articles = fetch_rss_articles(feed_name, feed_url)
-        if articles:
-            new_articles.extend(articles)
-            # Step 1: Save articles to MongoDB
-            save_articles("articles", articles)
-            logger.info(f"Saved {len(articles)} articles from {feed_name} to MongoDB.")
 
-            # Step 2: Process and store articles in the vector database
+        if articles:
             for article in articles:
                 try:
                     article_processor.process_and_store_article(article)
                     logger.info(f"Processed and stored article '{article['title']}' in vector DB.")
                 except Exception as e:
                     logger.error(f"Failed to process article '{article['title']}': {e}")
+            total_articles += len(articles)
         else:
             logger.warning(f"No articles found in {feed_name} RSS feed.")
 
-    if new_articles:
-        logger.info(f"Total {len(new_articles)} articles saved and processed from Tuổi Trẻ feeds.")
+    if total_articles:
+        logger.info(f"Total {total_articles} articles processed and stored from Tuổi Trẻ feeds.")
     else:
-        logger.info("No valid articles to save.")
+        logger.info("No valid articles found to process from Tuổi Trẻ feeds.")
 
 if __name__ == "__main__":
     scrape_tuoitre()

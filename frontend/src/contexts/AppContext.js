@@ -107,7 +107,8 @@ export const AppProvider = ({ children }) => {
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      const response = await summarizeArticle(article._id);
+      // Send article ID for summarization
+      const response = await summarizeArticle(article.id || article._id);
 
       // Debug: Log the summary
       console.log('Article summary:', response);

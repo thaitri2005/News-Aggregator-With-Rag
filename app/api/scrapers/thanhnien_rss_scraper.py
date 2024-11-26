@@ -1,10 +1,9 @@
-# app/api/scrapers/thanhnien_rss_scraper.py
+#app/api/scrapers/thanhnien_rss_scraper.py
 import feedparser
 import logging
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
-from services.mongo_service import save_articles
 from services.article_processor import ArticleProcessor  # Import the ArticleProcessor
 from models.article_model import Article
 from utils.scraper_helpers import clean_html
@@ -33,7 +32,7 @@ def scrape_article_content(article_url):
 
         content_div = soup.find('div', class_='detail-content.afcbc-body')
         content = "\n".join([p.get_text(strip=True) for p in content_div.find_all('p')]) if content_div else ''
-        
+
         # Combine extracted content
         full_content = f"{sapo_text}\n\n{content}"
         return full_content
@@ -80,7 +79,6 @@ def fetch_rss_articles(feed_name, feed_url):
 def scrape_thanhnien_rss():
     """
     Main function for scraping Thanh Niên RSS feeds.
-    - Saves articles to MongoDB.
     - Processes articles for vectorization and stores them in the vector database.
     """
     logger.info("Starting Thanh Niên RSS scraper...")
@@ -89,11 +87,6 @@ def scrape_thanhnien_rss():
         articles = fetch_rss_articles(feed_name, feed_url)
 
         if articles:
-            # Step 1: Save articles to MongoDB
-            save_articles('articles', articles)
-            logger.info(f"Saved {len(articles)} articles to MongoDB.")
-
-            # Step 2: Process and store articles in the vector database
             for article in articles:
                 try:
                     article_processor.process_and_store_article(article)
