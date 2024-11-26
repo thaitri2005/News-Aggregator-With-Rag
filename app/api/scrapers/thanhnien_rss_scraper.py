@@ -5,27 +5,36 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from services.mongo_service import save_articles
+from services.article_processor import ArticleProcessor  # Import the ArticleProcessor
 from models.article_model import Article
 from utils.scraper_helpers import clean_html
 
 logger = logging.getLogger(__name__)
+
+# Initialize ArticleProcessor
+article_processor = ArticleProcessor()
 
 RSS_FEEDS = {
     "Trang Chủ": "https://thanhnien.vn/rss/home.rss"
 }
 
 def scrape_article_content(article_url):
+    """
+    Scrapes the full content of an article given its URL.
+    """
     try:
         response = requests.get(article_url)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
+        # Extract article content
         sapo = soup.find('h2', class_='detail-sapo')
         sapo_text = sapo.get_text(strip=True) if sapo else ''
 
         content_div = soup.find('div', class_='detail-content.afcbc-body')
         content = "\n".join([p.get_text(strip=True) for p in content_div.find_all('p')]) if content_div else ''
         
+        # Combine extracted content
         full_content = f"{sapo_text}\n\n{content}"
         return full_content
     except Exception as e:
@@ -33,6 +42,9 @@ def scrape_article_content(article_url):
         return None
 
 def fetch_rss_articles(feed_name, feed_url):
+    """
+    Fetches articles from an RSS feed and processes them into Article objects.
+    """
     try:
         feed = feedparser.parse(feed_url)
         articles = []
@@ -66,14 +78,31 @@ def fetch_rss_articles(feed_name, feed_url):
         return []
 
 def scrape_thanhnien_rss():
+    """
+    Main function for scraping Thanh Niên RSS feeds.
+    - Saves articles to MongoDB.
+    - Processes articles for vectorization and stores them in the vector database.
+    """
     logger.info("Starting Thanh Niên RSS scraper...")
     for feed_name, feed_url in RSS_FEEDS.items():
         logger.info(f"Fetching articles from {feed_name} feed...")
         articles = fetch_rss_articles(feed_name, feed_url)
+
         if articles:
+            # Step 1: Save articles to MongoDB
             save_articles('articles', articles)
+            logger.info(f"Saved {len(articles)} articles to MongoDB.")
+
+            # Step 2: Process and store articles in the vector database
+            for article in articles:
+                try:
+                    article_processor.process_and_store_article(article)
+                    logger.info(f"Processed and stored article '{article['title']}' in vector DB.")
+                except Exception as e:
+                    logger.error(f"Failed to process article '{article['title']}': {e}")
         else:
             logger.warning(f"No articles found in {feed_name} feed.")
+
     logger.info("Thanh Niên RSS scraper completed.")
 
 if __name__ == "__main__":

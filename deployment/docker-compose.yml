@@ -1,4 +1,5 @@
 # deployment/docker-compose.yml
+version: "3.8"
 services:
   backend:
     build: 
@@ -11,11 +12,13 @@ services:
     networks:
       - app-network
     environment:
-      - MONGO_URI=${MONGO_URI}  # Use the MongoDB Atlas URI from environment variables
+      - MONGO_URI=${MONGO_URI}         # Use the MongoDB Atlas URI from environment variables
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - PYTHONPATH=/app  # Ensures correct path for Python imports
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_HOST=${PINECONE_HOST} 
+      - PYTHONPATH=/app                # Ensures correct path for Python imports
     depends_on:
-      - scheduler  # Backend depends on the scheduler service
+      - scheduler                      # Backend depends on the scheduler service
 
   frontend:
     build: 
@@ -37,8 +40,11 @@ services:
     networks:
       - app-network
     environment:
-      - MONGO_URI=${MONGO_URI}  # Use MongoDB Atlas
+      - MONGO_URI=${MONGO_URI}         # Use MongoDB Atlas
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_HOST=${PINECONE_HOST} 
+      - PYTHONPATH=/app
 
 networks:
   app-network:

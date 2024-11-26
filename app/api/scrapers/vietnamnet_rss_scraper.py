@@ -3,10 +3,14 @@ import feedparser
 import logging
 from datetime import datetime
 from services.mongo_service import save_articles
+from services.article_processor import ArticleProcessor  # Import ArticleProcessor
 from models.article_model import Article
 from utils.scraper_helpers import clean_html, fetch_article_content_and_date
 
 logger = logging.getLogger(__name__)
+
+# Initialize the ArticleProcessor
+article_processor = ArticleProcessor()
 
 RSS_FEEDS = {
     "Đời sống": "https://infonet.vietnamnet.vn/rss/doi-song.rss",
@@ -20,6 +24,9 @@ RSS_FEEDS = {
 }
 
 def fetch_rss_articles(feed_name, feed_url):
+    """
+    Fetch articles from an RSS feed and process them for full content and date parsing.
+    """
     try:
         feed = feedparser.parse(feed_url)
         articles = []
@@ -29,6 +36,7 @@ def fetch_rss_articles(feed_name, feed_url):
             link = entry.link
             published_date = entry.get("published", None)
 
+            # Parse publication date
             date_obj = None
             if published_date:
                 try:
@@ -36,6 +44,7 @@ def fetch_rss_articles(feed_name, feed_url):
                 except ValueError as e:
                     logger.error(f"RSS date parsing failed for {published_date}: {e}")
 
+            # Fetch content and date from the article page
             full_content, article_date = fetch_article_content_and_date(link, "div.contentDetail__main-reading")
             final_date = article_date or date_obj or datetime.now()
 
@@ -55,13 +64,30 @@ def fetch_rss_articles(feed_name, feed_url):
         return []
 
 def scrape_vietnamnet_rss():
+    """
+    Scrape VietnamNet articles using RSS feeds.
+    - Saves articles to MongoDB.
+    - Processes articles for vectorization and stores them in the vector database.
+    """
     logger.info("Starting VietnamNet RSS scraper...")
     for feed_name, feed_url in RSS_FEEDS.items():
         articles = fetch_rss_articles(feed_name, feed_url)
+
         if articles:
+            # Step 1: Save articles to MongoDB
             save_articles('articles', articles)
+            logger.info(f"Saved {len(articles)} articles from {feed_name} to MongoDB.")
+
+            # Step 2: Process and store articles in the vector database
+            for article in articles:
+                try:
+                    article_processor.process_and_store_article(article)
+                    logger.info(f"Processed and stored article '{article['title']}' in vector DB.")
+                except Exception as e:
+                    logger.error(f"Failed to process article '{article['title']}': {e}")
         else:
             logger.warning(f"No articles found in {feed_name} feed.")
+
     logger.info("VietnamNet RSS scraper completed.")
 
 if __name__ == "__main__":
