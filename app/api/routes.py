@@ -171,6 +171,7 @@ def summarize():
             abort(400, description="No article ID provided.")
 
         # Fetch metadata for the article by its ID
+        logger.debug(f"Querying vector DB for article ID: {article_id}")
         results = vector_db.query_by_id(article_id)
         if not results:
             logger.error(f"Article not found with ID: {article_id}")
@@ -178,21 +179,31 @@ def summarize():
 
         # Extract the content from the metadata
         metadata = next(iter(results))["metadata"]
-        article_content = metadata.get("chunk", "")  # Use 'chunk' instead of 'content'
+        logger.debug(f"Retrieved metadata for article ID {article_id}: {metadata}")
 
+        # Fetch and validate article content
+        article_content = metadata.get("chunk", "")  # Use 'chunk' instead of 'content'
         if not article_content:
-            logger.error(f"Content is missing for article with ID: {article_id}")
+            logger.error(f"Content (chunk) is missing for article with ID: {article_id}")
             abort(404, description="Article content not found.")
 
+        # Log the content and its length
+        logger.debug(f"Article content length: {len(article_content)}")
+        logger.debug(f"Article content (first 200 chars): {article_content[:200]}")
+
         # Summarize the article using Gemini API
+        logger.info(f"Summarizing article with ID: {article_id}...")
         summary = summarize_article(article_content)
+        
         if "error" in summary.lower():
-            logger.error(f"Failed to summarize article with ID: {article_id}.")
+            logger.error(f"Failed to summarize article with ID: {article_id}. Response: {summary}")
             return jsonify({"error": summary}), 500
 
-        logger.info(f"Summarized article with ID: {article_id}.")
+        # Log the generated summary
+        logger.info(f"Generated summary for article ID {article_id}: {summary}")
         return jsonify({"summary": summary}), 200
 
     except Exception as e:
         logger.exception("An error occurred during summarization.")
         abort(500, description="Internal server error.")
+

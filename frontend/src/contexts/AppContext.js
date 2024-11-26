@@ -101,18 +101,21 @@ export const AppProvider = ({ children }) => {
     await searchArticlesWithOptions(query, page, limit, sort_by, order, filters);
   };
 
-  // Function to fetch summary of an article
   const fetchSummary = async (article) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
-
+  
     try {
-      // Send article ID for summarization
+      // Log the article ID being sent for summarization
+      console.log('Sending article_id:', article.id || article._id);
+  
+      // Send the article ID to the summarize API
       const response = await summarizeArticle(article.id || article._id);
-
-      // Debug: Log the summary
-      console.log('Article summary:', response);
-
+  
+      // Debug: Log the response from the backend
+      console.log('Summary API response:', response);
+  
+      // Update the selected article in the state
       dispatch({
         type: 'SET_SELECTED_ARTICLE',
         payload: { ...article, summary: response.summary || 'No summary available.' },
@@ -123,7 +126,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  };  
 
   return (
     <AppContext.Provider value={{ state, dispatch, searchArticlesWithOptions, fetchSummary, loadMoreArticles }}>
