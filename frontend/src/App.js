@@ -99,15 +99,6 @@ function App() {
             onKeyDown={handleKeyDown}
             className="search-input"
           />
-          <Button
-            onClick={handleSearch}
-            variant="contained"
-            color="primary"
-            className="search-button"
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Search'}
-          </Button>
         </Box>
 
         {/* Sorting Options */}
