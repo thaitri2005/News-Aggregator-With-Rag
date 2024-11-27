@@ -27,6 +27,7 @@ body {
   margin-bottom: 20px;
 }
 
+/* Search Bar */
 .search-container {
   display: flex;
   justify-content: space-between;
@@ -34,25 +35,14 @@ body {
   gap: 10px;
 }
 
+/* Rounded input field */
 .search-input {
   flex-grow: 1;
   background-color: #f0f4f8;
+  border-radius: 50px; /* Makes the input field round */
 }
 
-.search-button {
-  height: 55px;
-  background-color: #1976d2;
-  color: white;
-  border-radius: 10px;
-  padding: 0 20px;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
 
-.search-button:hover {
-  background-color: #ffffff; /* White background */
-  color: #1976d2; /* Blue text */
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
-}
 
 .error-message {
   margin-top: 10px;
