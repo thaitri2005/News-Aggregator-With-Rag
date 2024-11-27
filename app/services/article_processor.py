@@ -1,7 +1,8 @@
-#services/article_processor.py
+# app/services/article_processor.py
 from services.vectorizer_service import PhoBERTVectorizer
 from services.vector_db_service import VectorDBService
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -12,54 +13,71 @@ class ArticleProcessor:
 
     def process_and_store_article(self, article):
         """
-        Processes an article by chunking, vectorizing, and storing it in the vector database.
+        Processes an article by vectorizing its title and storing it in the vector database,
+        with the content kept as metadata.
         """
-        if not article.get('content'):
-            logger.warning(f"Skipping article {article['source_url']} due to empty content.")
-            return
+        try:
+            if not article.get('title') or not article.get('content'):
+                logger.warning(f"Skipping article {article.get('source_url', 'unknown')} due to missing title or content.")
+                return
 
-        chunks = self.chunk_article(article['content'])
-        if not chunks:
-            logger.warning(f"No valid chunks created for article {article['source_url']}.")
-            return
+            # Clean and preprocess title and content
+            title = self.clean_text(article['title'])
+            content = article['content']  # Keep raw content for metadata
 
-        vectors = self.create_vectors(article, chunks)
-        if vectors:
-            self.vector_db.upsert_vectors(vectors)
-        else:
-            logger.warning(f"No vectors created for article {article['source_url']}.")
+            # Create and store vector for the title
+            title_vector = self.create_title_vector(article, title, content)
+            if title_vector:
+                logger.debug(f"Upserting vector with metadata: {title_vector['metadata']}")
+                self.vector_db.upsert_vectors([title_vector], namespace="title")
+            else:
+                logger.warning(f"Failed to create vector for title of article {article['source_url']}.")
+        except Exception as e:
+            logger.error(f"Error processing article {article.get('source_url', 'unknown')}: {e}")
 
-
-    def chunk_article(self, content, chunk_size=500, overlap=100):
+    def clean_text(self, text):
         """
-        Splits article content into smaller chunks with optional overlap.
+        Cleans the input text by removing special characters, extra spaces, and stop words.
         """
-        chunks = []
-        for i in range(0, len(content), chunk_size - overlap):
-            chunks.append(content[i:i + chunk_size])
-        return chunks
+        try:
+            if not text:
+                return ""
 
+            stop_words = {"và", "nhưng", "hoặc", "cũng", "để", "đến", "là", "của", "có", "khi", "vì", "do", "nếu", "bởi", "đã"}
+            text = re.sub(r"[^\w\s]", " ", text)  # Remove special characters
+            text = re.sub(r"\s+", " ", text).strip()  # Normalize spaces
+            words = text.split()
+            cleaned_text = " ".join(word for word in words if word.lower() not in stop_words)
+            logger.debug(f"Cleaned text: {cleaned_text[:200]}...")  # Log a sample of the cleaned text
+            return cleaned_text
+        except Exception as e:
+            logger.error(f"Error cleaning text: {e}")
+            return text
 
-    def create_vectors(self, article, chunks):
+    def create_title_vector(self, article, title, content):
         """
-        Creates vector representations for each chunk and prepares them for insertion into the vector database.
+        Creates a vector representation for the article's title.
         """
-        vectors = []
-        for idx, chunk in enumerate(chunks):
-            try:
-                vector = self.vectorizer.encode_text(chunk)
-                vectors.append({
-                    'id': f"{article['source_url']}-{idx}",  # Unique ID for each chunk
-                    'values': vector.tolist(),
-                    'metadata': {
-                        'title': article['title'],
-                        'source_url': article['source_url'],
-                        'date': article['date'].isoformat(),
-                        'source': article['source'],
-                        'chunk': chunk,
-                    }
-                })
-            except Exception as e:
-                logger.error(f"Failed to vectorize chunk {idx} for article {article['source_url']}: {e}")
-        return vectors
-
+        try:
+            logger.info(f"Vectorizing title for article {article['source_url']}.")
+            title_vector = self.vectorizer.encode_text(title)
+            if title_vector is None or len(title_vector) != self.vectorizer.target_dim:
+                logger.error(f"Invalid vector for title. Expected dimension: {self.vectorizer.target_dim}.")
+                return None
+            metadata = {
+                'type': 'title',
+                'title': title,
+                'content': content,  # Full content stored in metadata
+                'source_url': article['source_url'],
+                'date': article['date'],  # Ensure the date is already in ISO format
+                'source': article['source'],
+            }
+            logger.debug(f"Generated metadata: {metadata}")
+            return {
+                'id': f"{article['source_url']}-title",
+                'values': title_vector.tolist(),
+                'metadata': metadata
+            }
+        except Exception as e:
+            logger.error(f"Failed to vectorize title for article {article['source_url']}: {e}")
+            return None

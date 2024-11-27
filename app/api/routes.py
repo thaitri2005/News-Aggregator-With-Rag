@@ -13,7 +13,7 @@ vector_db = VectorDBService()
 class ArticleSchema(Schema):
     title = fields.Str(required=True)
     content = fields.Str(required=True)
-    date = fields.Str(required=True)  # Store date as a string for simplicity
+    date = fields.Str(required=True)  # Store date as a string in ISO 8601 format
     source_url = fields.Url(required=True)
     source = fields.Str(required=True)
 
@@ -28,7 +28,7 @@ class RetrieveSchema(Schema):
 @api.route("/articles", methods=["POST"])
 def add_article():
     """
-    Adds a new article to Pinecone.
+    Adds a new article to Pinecone, vectorizing only the title and storing the content as metadata.
     """
     try:
         data = request.get_json()
@@ -40,24 +40,33 @@ def add_article():
         article_schema = ArticleSchema()
         validated_data = article_schema.load(data)
 
-        # Encode content and upsert the vector
-        vector = vector_db.vectorizer.encode_text(validated_data["content"]).tolist()
+        # Vectorize the title
+        title_vector = vector_db.vectorizer.encode_text(validated_data["title"])
+        if title_vector is None:
+            logger.error("Failed to vectorize the title.")
+            abort(400, description="Failed to vectorize the title.")
+
+        # Prepare metadata
         metadata = {
             "title": validated_data["title"],
-            "chunk": validated_data["content"],  # Store under 'chunk'
+            "content": validated_data["content"],
             "source_url": validated_data["source_url"],
             "date": validated_data["date"],
             "source": validated_data["source"],
         }
 
-        vector_db.upsert_vectors(
-            vectors=[
-                {"id": validated_data["source_url"], "values": vector, "metadata": metadata}
-            ]
-        )
+        # Create vector data for the title
+        vector = {
+            "id": f"{validated_data['source_url']}-title",
+            "values": title_vector.tolist(),
+            "metadata": metadata,
+        }
 
-        logger.info(f"Article '{validated_data['title']}' added successfully to Pinecone.")
+        # Upsert the title vector
+        vector_db.upsert_vectors([vector], namespace="title")
+        logger.info(f"Article '{validated_data['title']}' added successfully.")
         return jsonify({"message": "Article added successfully"}), 201
+
     except ValidationError as ve:
         logger.error(f"Validation error: {ve.messages}")
         abort(400, description=ve.messages)
@@ -91,26 +100,26 @@ def retrieve():
         sort_by = validated_data["sort_by"]
         order = validated_data["order"]
 
-        # Query Pinecone
-        pinecone_results = vector_db.query_vectors(query, top_k=limit)
+        # Query only the title vectors
+        results = vector_db.query_vectors(query, namespace="title", top_k=limit * 2)
+
+        if not results:
+            logger.info(f"No results found for query '{query}'.")
+            return jsonify([]), 200
 
         # Prepare articles with metadata
-        articles = []
-        for result in pinecone_results:
-            metadata = result["metadata"]
-            if not metadata.get("chunk"):  # Use 'chunk' instead of 'content'
-                logger.warning(f"Metadata for ID {result['id']} is missing 'chunk'. Skipping.")
-                continue
-
-            articles.append({
+        articles = [
+            {
                 "id": result["id"],
-                "title": metadata.get("title", "Untitled"),
-                "content": metadata.get("chunk", ""),  # Retrieve 'chunk'
-                "source_url": metadata.get("source_url", ""),
-                "date": metadata.get("date", ""),
-                "source": metadata.get("source", "Unknown"),
+                "title": result["metadata"].get("title", "Untitled"),
+                "content": result["metadata"].get("content", ""),
+                "source_url": result["metadata"].get("source_url", ""),
+                "date": result["metadata"].get("date", ""),
+                "source": result["metadata"].get("source", "Unknown"),
                 "relevance_score": result["score"],
-            })
+            }
+            for result in results
+        ]
 
         # Sort articles
         if sort_by == "date":
@@ -120,7 +129,7 @@ def retrieve():
 
         # Pagination
         start_index = (page - 1) * limit
-        paginated_articles = articles[start_index : start_index + limit]
+        paginated_articles = articles[start_index: start_index + limit]
 
         logger.info(f"Retrieved {len(paginated_articles)} articles for query '{query}'.")
         return jsonify(paginated_articles), 200
@@ -151,13 +160,13 @@ def clear_database():
         logger.error("Failed to clear the Pinecone database.")
         abort(500, description="Failed to clear the Pinecone database.")
 
+
 @api.route("/summarize", methods=["POST"])
 def summarize():
     """
     Summarizes an article using the Gemini API.
     """
     try:
-        # Log the incoming request
         data = request.get_json()
         logger.debug(f"Received summarize request payload: {data}")
 
@@ -172,38 +181,27 @@ def summarize():
 
         # Fetch metadata for the article by its ID
         logger.debug(f"Querying vector DB for article ID: {article_id}")
-        results = vector_db.query_by_id(article_id)
+        results = vector_db.query_by_id(article_id, namespace="title")
         if not results:
             logger.error(f"Article not found with ID: {article_id}")
             abort(404, description="Article not found.")
 
-        # Extract the content from the metadata
         metadata = next(iter(results))["metadata"]
-        logger.debug(f"Retrieved metadata for article ID {article_id}: {metadata}")
-
-        # Fetch and validate article content
-        article_content = metadata.get("chunk", "")  # Use 'chunk' instead of 'content'
+        article_content = metadata.get("content", "")
         if not article_content:
-            logger.error(f"Content (chunk) is missing for article with ID: {article_id}")
+            logger.error(f"Content is missing for article with ID: {article_id}")
             abort(404, description="Article content not found.")
 
-        # Log the content and its length
-        logger.debug(f"Article content length: {len(article_content)}")
-        logger.debug(f"Article content (first 200 chars): {article_content[:200]}")
-
-        # Summarize the article using Gemini API
+        # Summarize the article
         logger.info(f"Summarizing article with ID: {article_id}...")
         summary = summarize_article(article_content)
-        
+
         if "error" in summary.lower():
             logger.error(f"Failed to summarize article with ID: {article_id}. Response: {summary}")
             return jsonify({"error": summary}), 500
 
-        # Log the generated summary
         logger.info(f"Generated summary for article ID {article_id}: {summary}")
         return jsonify({"summary": summary}), 200
-
     except Exception as e:
         logger.exception("An error occurred during summarization.")
         abort(500, description="Internal server error.")
-
