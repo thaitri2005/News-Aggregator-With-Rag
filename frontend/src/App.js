@@ -13,26 +13,26 @@ function App() {
   const [sortOrder, setSortOrder] = useState(order);
   const [sortBy, setSortBy] = useState(sort_by);
 
-  const observer = useRef();
+  const lastArticleElementRef = useRef();
 
   // Handle search input
   const handleSearchInput = (event) => {
     dispatch({ type: 'SET_QUERY', payload: event.target.value });
   };
 
-  // Trigger search when the sorting options change (automatically apply filters)
+  // Trigger search when sort options change
   useEffect(() => {
     if (searchQuery.trim()) {
-      searchArticlesWithOptions(searchQuery, 1, 5, sortBy, sortOrder); // Start from page 1
+      searchArticlesWithOptions(searchQuery, 1, 5, sortBy, sortOrder);
     }
-    // Reset the order to 'desc' when sorting by relevance (since order doesn't matter for relevance)
+    // Reset order to 'desc' for relevance sorting
     if (sortBy === 'score') {
       setSortOrder('desc');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy, sortOrder]); // Now only runs when sort options change
+  }, [sortBy, sortOrder]);
 
-  // Manually trigger search when the user presses Enter or clicks the search button
+  // Handle search on button click or "Enter" key press
   const handleSearch = () => {
     if (searchQuery.trim() === '') {
       dispatch({ type: 'SET_ERROR', payload: 'Please enter a search term' });
@@ -41,39 +41,44 @@ function App() {
     searchArticlesWithOptions(searchQuery, 1, 5, sortBy, sortOrder);
   };
 
-  // Handle "Enter" key to trigger search
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       handleSearch();
     }
   };
 
-  // Intersection observer to detect scrolling to the end of the article list
-  const lastArticleElementRef = useRef();
   useEffect(() => {
     if (loading || !hasMore) return;
-
+  
+    // Store the ref value in a local variable to ensure stability during cleanup
+    const currentRef = lastArticleElementRef.current;
+  
     const observerCallback = (entries) => {
       if (entries[0].isIntersecting) {
-        loadMoreArticles(searchQuery, page + 1, 5, sortBy, sortOrder);
+        loadMoreArticles(searchQuery, page, 5, sortBy, sortOrder);
       }
     };
-
-    if (observer.current) observer.current.disconnect();
-
-    observer.current = new IntersectionObserver(observerCallback);
-    if (lastArticleElementRef.current) observer.current.observe(lastArticleElementRef.current);
-
-  }, [loading, hasMore, searchQuery, page, sortBy, sortOrder, loadMoreArticles]);
+  
+    const observer = new IntersectionObserver(observerCallback, { threshold: 0.1 });
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+  
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [loading, hasMore, searchQuery, page, sortBy, sortOrder, loadMoreArticles]);  
 
   // Error fade-out effect
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
         dispatch({ type: 'SET_ERROR', payload: null });
-      }, 3000); // Fades out the error after 3 seconds
+      }, 3000);
 
-      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts or if error changes
+      return () => clearTimeout(timer);
     }
   }, [error, dispatch]);
 
@@ -106,28 +111,26 @@ function App() {
         </Box>
 
         {/* Sorting Options */}
-        <Box className="filter-container"> {/* Add vertical spacing */}
+        <Box className="filter-container">
           <FormControl variant="outlined" className="sort-select">
             <InputLabel id="sort-by-label">Sort By</InputLabel>
             <Select
               labelId="sort-by-label"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)} // Automatically trigger search on change
+              onChange={(e) => setSortBy(e.target.value)}
               label="Sort By"
             >
               <MenuItem value="score">Relevance</MenuItem>
               <MenuItem value="date">Date</MenuItem>
             </Select>
           </FormControl>
-
-          {/* Conditionally show the "Order" dropdown only when sorting by date */}
           {sortBy === 'date' && (
             <FormControl variant="outlined" className="order-select">
               <InputLabel id="sort-order-label">Order</InputLabel>
               <Select
                 labelId="sort-order-label"
                 value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)} // Automatically trigger search on change
+                onChange={(e) => setSortOrder(e.target.value)}
                 label="Order"
               >
                 <MenuItem value="asc">Ascending</MenuItem>
@@ -144,17 +147,14 @@ function App() {
       {/* Articles List */}
       <Box className="articles-list">
         {articles.length > 0 ? (
-          articles.map((article, index) => {
-            if (articles.length === index + 1) {
-              return (
-                <div ref={lastArticleElementRef} key={article._id}>
-                  <Article article={article} fetchSummary={fetchSummary} />
-                </div>
-              );
-            } else {
-              return <Article key={article._id} article={article} fetchSummary={fetchSummary} />;
-            }
-          })
+          articles.map((article, index) => (
+            <div
+              ref={index === articles.length - 1 ? lastArticleElementRef : null}
+              key={article.id || article._id} // Ensure consistent IDs
+            >
+              <Article article={article} fetchSummary={fetchSummary} />
+            </div>
+          ))
         ) : (
           <Typography align="center" color="textSecondary">
             {loading ? '' : 'No articles found. Try refining your search.'}
@@ -162,10 +162,10 @@ function App() {
         )}
       </Box>
 
-      {/* Loading more articles */}
+      {/* Loading Spinner */}
       {loading && <CircularProgress style={{ display: 'block', margin: '20px auto' }} />}
 
-      {/* No more articles message */}
+      {/* No More Articles Message */}
       {!loading && !hasMore && (
         <Typography align="center" color="textSecondary">
           No more articles to load.
