@@ -37,8 +37,11 @@ Before you begin, ensure you have the following installed:
     Create a `.env` file in the root directory and add the following environment variables:
 
     ```env
-    # MongoDB connection string
-    MONGO_URI=your_mongo_db_connection_string
+    # Pinecone API Key
+    PINECONE_API_KEY=your_pinecone_api_key
+
+    # Pinecone Host
+    PINECONE_HOST=your_pinecone_host
 
     # Google Gemini API Key
     GEMINI_API_KEY=your_gemini_api_key
@@ -68,26 +71,9 @@ Before you begin, ensure you have the following installed:
 
 ## **Available Endpoints (Backend)**
 
-### **GET /api/articles**
-
-- **Description**: Retrieves a list of all articles in the database.
-- **Response**:
-  - 200 OK: Returns a list of articles with `_id`, `title`, `content`, `date`, `source_url`, and `source`.
-  - 500 Internal Server Error: If something goes wrong during the fetch process.
-
-### **GET /api/articles/_id**
-
-- **Description**: Fetches a specific article by its ID.
-- **Parameters**: `id` (path parameter) – MongoDB ObjectID of the article.
-- **Response**:
-  - 200 OK: Returns the article corresponding to the given ID.
-  - 400 Bad Request: Invalid article ID format.
-  - 404 Not Found: Article with the given ID not found.
-  - 500 Internal Server Error: If something goes wrong.
-
 ### **POST /api/articles**
 
-- **Description**: Adds a new article to the database.
+- **Description**: Adds a new article to Pinecone, vectorizing the title and storing the content as metadata.
 - **Request Body** (JSON):
 
     ```json
@@ -95,7 +81,8 @@ Before you begin, ensure you have the following installed:
         "title": "Article Title",
         "content": "Full content of the article",
         "date": "2024-01-01T00:00:00Z",
-        "source_url": "https://example.com"
+        "source_url": "https://example.com",
+        "source": "News Source"
     }
     ```
 
@@ -104,57 +91,9 @@ Before you begin, ensure you have the following installed:
   - 400 Bad Request: Invalid or missing input data.
   - 500 Internal Server Error: If something goes wrong during insertion.
 
-### **GET /api/summaries**
-
-- **Description**: Fetches all available article summaries in the database.
-- **Response**:
-  - 200 OK: Returns a list of summaries.
-  - 500 Internal Server Error: If something goes wrong during the fetch process.
-
-### **POST /api/summarize**
-
-- **Description**: Generates a summary for a specific article. If the summary already exists in the database, it will return the stored summary.
-- **Request Body** (JSON):
-
-    ```json
-    {
-        "article_id": "60e4d5f5e8a4e6b450d2f0b5"
-    }
-    ```
-
-- **Response**:
-  - 200 OK: Returns the summary of the article.
-  - 400 Bad Request: Missing or invalid article ID.
-  - 404 Not Found: Article not found.
-  - 500 Internal Server Error: If something goes wrong during summarization or while saving the summary.
-
-### **GET /api/queries**
-
-- **Description**: Retrieves all saved queries.
-- **Response**:
-  - 200 OK: Returns a list of queries.
-  - 500 Internal Server Error: If something goes wrong during the fetch process.
-
-### **POST /api/queries**
-
-- **Description**: Adds a new query to the database.
-- **Request Body** (JSON):
-
-    ```json
-    {
-        "query": "Search term",
-        "response": "Query response"
-    }
-    ```
-
-- **Response**:
-  - 201 Created: Query added successfully.
-  - 400 Bad Request: Invalid or missing input data.
-  - 500 Internal Server Error: If something goes wrong during insertion.
-
 ### **POST /api/retrieve**
 
-- **Description**: Retrieves articles that match a search query using MongoDB's text search.
+- **Description**: Retrieves articles based on a query and ranks them using Pinecone vectors. Allows pagination and sorting by relevance or date.
 - **Request Body** (JSON):
 
     ```json
@@ -162,27 +101,44 @@ Before you begin, ensure you have the following installed:
         "query": "Search term",
         "page": 1,
         "limit": 5,
-        "sort_by": "score",
-        "order": "desc"
+        "sort_by": "score",   // or "date"
+        "order": "desc"       // or "asc"
     }
     ```
 
-  - `query`: The search term (required).
-  - `page`: The page number for pagination (default is 1).
-  - `limit`: The number of articles to return per page (default is 5).
-  - `sort_by`: Sorting criteria, either "score" (relevance) or "date" (default is "score").
-  - `order`: Sorting order, either "asc" or "desc" (default is "desc").
 - **Response**:
-  - 200 OK: Returns a list of articles matching the search query.
+  - 200 OK: Returns a list of articles matching the query.
   - 400 Bad Request: Invalid or missing input data.
   - 404 Not Found: No articles found matching the query.
   - 500 Internal Server Error: If something goes wrong during the retrieval process.
 
-### **Error Handlers**
+### **DELETE /api/clear**
 
-- **400 Bad Request**: Returns a JSON error response when the input is invalid.
-- **404 Not Found**: Returns a JSON error response when the requested resource is not found.
-- **500 Internal Server Error**: Returns a JSON error response when there’s an internal server issue.
+- **Description**: Deletes all vectors in the specified namespace or the default namespace in Pinecone.
+- **Query Parameters**:
+  - `namespace`: The namespace to clear (default is "default").
+  
+- **Response**:
+  - 200 OK: Success message, all vectors in the specified namespace have been deleted.
+  - 400 Bad Request: Invalid namespace provided.
+  - 500 Internal Server Error: If there’s an issue with clearing the Pinecone database.
+
+### **POST /api/summarize**
+
+- **Description**: Summarizes an article using the **Gemini API**. The article's content must already exist in Pinecone.
+- **Request Body** (JSON):
+
+    ```json
+    {
+        "article_id": "article-id-here"
+    }
+    ```
+
+- **Response**:
+  - 200 OK: Returns the generated summary of the article.
+  - 400 Bad Request: Invalid or missing article ID.
+  - 404 Not Found: Article not found in the Pinecone database.
+  - 500 Internal Server Error: If summarization fails or another error occurs.
 
 ---
 
@@ -191,9 +147,8 @@ Before you begin, ensure you have the following installed:
 - **Backend**:
   - Flask (Python)
   - APScheduler
-  - Pymongo
-  - Flask-CORS
-  - Google Generative AI API - For real-time article summarization.
+  - Pinecone (Vector Database for article storage and search)
+  - Google Generative AI (Gemini API) for summarization
   - BeautifulSoup (bs4)
   - Python Dotenv
   - Marshmallow
@@ -211,15 +166,8 @@ Before you begin, ensure you have the following installed:
   - Webpack
   - Lodash
 - **Database**:
-  - MongoDB
+  - Pinecone (vector database for storing article titles and metadata)
 - **Containerization**: Docker, Docker Compose for deployment
-
----
-
-## **Known Issues**
-
-- Ensure your MongoDB Atlas connection string is correct in the `.env` file.
-- If the frontend doesn't reload properly, you may need to set `CHOKIDAR_USEPOLLING=true` in the `docker-compose.yml` file for live reloading in Docker.
 
 ---
 
