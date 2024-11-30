@@ -2,7 +2,7 @@
 
 ## **Project Overview**
 
-This project is a Vietnamese Retrieval-Augmented Generation (RAG) based AI News Aggregator that scrapes news articles from various sources, provides an interface for users to search for news, and uses AI (via the Google Gemini API) to generate article summaries. The backend is built based on the MVC structure with Flask, the frontend with React, MongoDB is used as the database, and Docker is used for containerization.
+This project is a Vietnamese Retrieval-Augmented Generation (RAG) based AI News Aggregator that scrapes news articles from various sources, provides an interface for users to search for news, and uses AI (via the Google Gemini API) to generate article summaries. The backend is built based on the MVC structure with Flask, the frontend with React, PineCone is used as the database for Vector-Indexed Search and Retrieval while Docker is used for containerization.
 
 ## **Features**
 
