@@ -5,7 +5,7 @@ import numpy as np
 import re
 
 class PhoBERTVectorizer:
-    def __init__(self, model_name='vinai/phobert-base', target_dim=1024):
+    def __init__(self, model_name='vinai/phobert-base', target_dim=768):
         """
         Initializes the PhoBERT vectorizer with the specified model and target dimension.
         """

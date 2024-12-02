@@ -17,7 +17,7 @@ class VectorDBService:
             raise ValueError("PINECONE_API_KEY and PINECONE_HOST must be set in the environment variables.")
 
         self.pinecone = Pinecone(api_key=api_key)
-        self.index = self.pinecone.Index('aggregator', host=host)
+        self.index = self.pinecone.Index('aggsum', host=host)
 
         # Initialize PhoBERT for encoding
         self.vectorizer = PhoBERTVectorizer()
