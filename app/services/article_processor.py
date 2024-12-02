@@ -43,11 +43,11 @@ class ArticleProcessor:
             if not text:
                 return ""
 
-            stop_words = {"và", "nhưng", "hoặc", "cũng", "để", "đến", "là", "của", "có", "khi", "vì", "do", "nếu", "bởi", "đã"}
+            # stop_words = {"và", "nhưng", "hoặc", "cũng", "để", "đến", "là", "của", "có", "khi", "vì", "do", "nếu", "bởi", "đã"}
             text = re.sub(r"[^\w\s]", " ", text)  # Remove special characters
             text = re.sub(r"\s+", " ", text).strip()  # Normalize spaces
             words = text.split()
-            cleaned_text = " ".join(word for word in words if word.lower() not in stop_words)
+            cleaned_text = " ".join(word for word in words)
             logger.debug(f"Cleaned text: {cleaned_text[:200]}...")  # Log a sample of the cleaned text
             return cleaned_text
         except Exception as e:

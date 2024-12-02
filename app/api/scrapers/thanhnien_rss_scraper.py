@@ -67,7 +67,7 @@ def fetch_rss_articles(feed_name, feed_url):
                     content=full_content,
                     source_url=link,
                     date=date_obj,
-                    source=f"Thanh Niên - {feed_name}"
+                    source=f"Thanh Niên"
                 )
                 articles.append(article.to_dict())
 

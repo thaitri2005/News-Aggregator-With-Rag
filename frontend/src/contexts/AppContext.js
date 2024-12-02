@@ -14,6 +14,7 @@ const initialState = {
   hasMore: true,
   sort_by: 'score',
   order: 'desc',
+  sources: ['VNExpress', 'Tuổi Trẻ', 'VietnamNet', 'Thanh Niên'], // Default sources
 };
 
 // Reducer function to manage state
@@ -43,6 +44,8 @@ const reducer = (state, action) => {
       return { ...state, selectedArticle: action.payload, summaryPanelOpen: true };
     case 'CLOSE_SUMMARY_PANEL':
       return { ...state, selectedArticle: null, summaryPanelOpen: false };
+    case 'SET_SOURCES':
+      return { ...state, sources: action.payload };
     default:
       return state;
   }
@@ -62,13 +65,14 @@ export const AppProvider = ({ children }) => {
     limit = 5, 
     sort_by = 'score', 
     order = 'desc', 
-    filters = {}
+    sources = []
   ) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      const response = await searchArticles(query, page, limit, sort_by, order);
+      const filters = { sources };
+      const response = await searchArticles(query, page, limit, sort_by, order, filters);
       
       // Debug: Log the response
       console.log('Articles fetched:', response);
@@ -80,8 +84,6 @@ export const AppProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching articles:', error.message);
       dispatch({ type: 'SET_ERROR', payload: error.message });
-      // Optionally, you can also reset articles and hasMore
-      dispatch({ type: 'SET_ARTICLES', payload: [] });
       dispatch({ type: 'SET_HAS_MORE', payload: false });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -95,12 +97,13 @@ export const AppProvider = ({ children }) => {
     limit = 5, 
     sort_by = 'score', 
     order = 'desc', 
-    filters = {}
+    sources = []
   ) => {
     if (!state.hasMore || state.loading) return; // Prevent duplicate loading
-    await searchArticlesWithOptions(query, page, limit, sort_by, order, filters);
+    await searchArticlesWithOptions(query, page, limit, sort_by, order, sources);
   };
 
+  // Function to fetch article summaries
   const fetchSummary = async (article) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
