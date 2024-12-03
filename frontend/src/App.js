@@ -136,7 +136,7 @@ function App() {
               Sources
             </Typography>
             <FormGroup>
-              {['VNExpress', 'Tuổi Trẻ', 'VietnamNet', 'Thanh Niên'].map((source) => (
+              {['VNExpress', 'Tuổi Trẻ', 'VietnamNet', 'Thanh Niên', 'Dân Trí'].map((source) => (
                 <FormControlLabel
                   key={source}
                   control={

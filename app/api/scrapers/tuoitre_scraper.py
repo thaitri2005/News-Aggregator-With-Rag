@@ -13,11 +13,29 @@ logger = logging.getLogger(__name__)
 # Initialize the ArticleProcessor
 article_processor = ArticleProcessor()
 
+# Define RSS Feeds for Tuổi Trẻ
 RSS_FEEDS = {
+    "Trang Chủ": "https://tuoitre.vn/rss/trang-chu.rss",
     "Tin Mới Nhất": "https://tuoitre.vn/rss/tin-moi-nhat.rss",
-    "Thế Giới": "https://tuoitre.vn/rss/the-gioi.rss",
     "Thời Sự": "https://tuoitre.vn/rss/thoi-su.rss",
+    "Thế Giới": "https://tuoitre.vn/rss/the-gioi.rss",
+    "Pháp Luật": "https://tuoitre.vn/rss/phap-luat.rss",
+    "Kinh Doanh": "https://tuoitre.vn/rss/kinh-doanh.rss",
+    "Công Nghệ": "https://tuoitre.vn/rss/cong-nghe.rss",
+    "Xe": "https://tuoitre.vn/rss/xe.rss",
+    "Nhịp Sống Trẻ": "https://tuoitre.vn/rss/nhip-song-tre.rss",
+    "Văn Hóa": "https://tuoitre.vn/rss/van-hoa.rss",
+    "Giải Trí": "https://tuoitre.vn/rss/giai-tri.rss",
+    "Thể Thao": "https://tuoitre.vn/rss/the-thao.rss",
+    "Giáo Dục": "https://tuoitre.vn/rss/giao-duc.rss",
+    "Khoa Học": "https://tuoitre.vn/rss/khoa-hoc.rss",
+    "Sức Khỏe": "https://tuoitre.vn/rss/suc-khoe.rss",
+    "Giả Thật": "https://tuoitre.vn/rss/gia-that.rss",
+    "Thư Giãn": "https://tuoitre.vn/rss/thu-gian.rss",
+    "Bạn Đọc": "https://tuoitre.vn/rss/ban-doc.rss",
+    "Du Lịch": "https://tuoitre.vn/rss/du-lich.rss"
 }
+
 
 def fetch_rss_articles(feed_name, feed_url):
     """

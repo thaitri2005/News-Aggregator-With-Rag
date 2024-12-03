@@ -14,7 +14,34 @@ logger = logging.getLogger(__name__)
 article_processor = ArticleProcessor()
 
 RSS_FEEDS = {
-    "Trang Chủ": "https://thanhnien.vn/rss/home.rss"
+    "Trang Chủ": "https://thanhnien.vn/rss/home.rss",
+    "Thời Sự": "https://thanhnien.vn/rss/thoi-su.rss",
+    "Chính Trị": "https://thanhnien.vn/rss/chinh-tri.rss",
+    "Chào Ngày Mới": "https://thanhnien.vn/rss/chao-ngay-moi.rss",
+    "Thế Giới": "https://thanhnien.vn/rss/the-gioi.rss",
+    "Kinh Tế": "https://thanhnien.vn/rss/kinh-te.rss",
+    "Đời Sống": "https://thanhnien.vn/rss/doi-song.rss",
+    "Sức Khỏe": "https://thanhnien.vn/rss/suc-khoe.rss",
+    "Giới Trẻ": "https://thanhnien.vn/rss/gioi-tre.rss",
+    "Tiêu Dùng Thông Minh": "https://thanhnien.vn/rss/tieu-dung-thong-minh.rss",
+    "Giáo Dục": "https://thanhnien.vn/rss/giao-duc.rss",
+    "Du Lịch": "https://thanhnien.vn/rss/du-lich.rss",
+    "Văn Hóa": "https://thanhnien.vn/rss/van-hoa.rss",
+    "Giải Trí": "https://thanhnien.vn/rss/giai-tri.rss",
+    "Thể Thao": "https://thanhnien.vn/rss/the-thao.rss",
+    "Công Nghệ": "https://thanhnien.vn/rss/cong-nghe.rss",
+    "Xe": "https://thanhnien.vn/rss/xe.rss",
+    "Thời Trang Trẻ": "https://thanhnien.vn/rss/thoi-trang-tre.rss",
+    "Bạn Đọc": "https://thanhnien.vn/rss/ban-doc.rss",
+    "Rao Vặt": "https://thanhnien.vn/rss/rao-vat.rss",
+    "Diễn Đàn": "https://thanhnien.vn/rss/dien-dan.rss",
+    "Nhật Ký Tết Việt": "https://thanhnien.vn/rss/nhat-ky-tet-viet.rss",
+    "Magazine": "https://thanhnien.vn/rss/magazine.rss",
+    "Bạn Cần Biết": "https://thanhnien.vn/rss/ban-can-biet.rss",
+    "Cải Chính": "https://thanhnien.vn/rss/cai-chinh.rss",
+    "Tin 24h": "https://thanhnien.vn/rss/tin-24h.rss",
+    "Tin Thị Trường": "https://thanhnien.vn/rss/thi-truong.rss",
+    "Tin Nhanh 360": "https://thanhnien.vn/rss/tin-nhanh-360.rss"
 }
 
 def scrape_article_content(article_url):

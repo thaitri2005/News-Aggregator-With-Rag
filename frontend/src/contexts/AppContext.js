@@ -14,7 +14,7 @@ const initialState = {
   hasMore: true,
   sort_by: 'score',
   order: 'desc',
-  sources: ['VNExpress', 'Tuổi Trẻ', 'VietnamNet', 'Thanh Niên'], // Default sources
+  sources: ['VNExpress', 'Tuổi Trẻ', 'VietnamNet', 'Thanh Niên', 'Dân Trí'], // Default sources
 };
 
 // Reducer function to manage state
