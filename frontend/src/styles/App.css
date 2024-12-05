@@ -86,7 +86,12 @@ body {
   padding: 20px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
+  width: calc(100% - 30px); /* 30px smaller than the search bar */
+  min-width: 750px; /* Ensures it doesn't exceed 770px */
+  margin-left: auto; /* Centers the cards horizontally */
+  margin-right: auto; /* Centers the cards horizontally */
 }
+
 
 .article-card:hover {
   transform: translateY(-10px);

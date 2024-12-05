@@ -156,7 +156,7 @@ function App() {
         <Box flex="1" ml={30} className="main-content" display="flex" flexDirection="column" alignItems="center">
           <Box className="fixed-panel">
             <Typography className="app-title" variant="h4" align="center" color="textPrimary" gutterBottom>
-              Vietnamese News Aggregator
+              Tin Nhanh Báo Lẹ
             </Typography>
             <TextField
               value={searchQuery}
