@@ -19,7 +19,7 @@ const Article = React.memo(({ article, fetchSummary }) => {
         </Typography>
         {source_url && (
           <Link href={source_url} target="_blank" rel="noopener noreferrer">
-            Read More
+            Đọc Thêm
           </Link>
         )}
       </CardContent>
@@ -30,7 +30,7 @@ const Article = React.memo(({ article, fetchSummary }) => {
           onClick={() => fetchSummary(article)}
           aria-label={`View summary of ${title}`}
         >
-          View Summary
+          Xem Tóm Tắt
         </Button>
       </CardActions>
     </Card>

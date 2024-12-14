@@ -1,0 +1,99 @@
+Date : 2024-12-11 21:27:53
+Directory : d:\RAG\News-Aggregator-With-Rag
+Total : 46 files,  22416 codes, 218 comments, 428 blanks, all 23062 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| JSON             |          3 |     20,275 |          0 |          3 |     20,278 |
+| Python           |         22 |      1,135 |         76 |        221 |      1,432 |
+| JavaScript       |         10 |        471 |         71 |         75 |        617 |
+| CSS              |          2 |        249 |         11 |         40 |        300 |
+| Markdown         |          1 |        143 |          0 |         52 |        195 |
+| YAML             |          1 |         46 |          1 |          4 |         51 |
+| Ignore           |          2 |         35 |         19 |         17 |         71 |
+| Docker           |          2 |         24 |         16 |         15 |         55 |
+| HTML             |          1 |         20 |         23 |          1 |         44 |
+| pip requirements |          1 |         17 |          1 |          0 |         18 |
+| XML              |          1 |          1 |          0 |          0 |          1 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                       | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                          |         46 |     22,416 |        218 |        428 |     23,062 |
+| . (Files)                                                                  |          1 |        143 |          0 |         52 |        195 |
+| app                                                                        |         25 |      1,188 |         97 |        240 |      1,525 |
+| app (Files)                                                                |          5 |         66 |         24 |         26 |        116 |
+| app\api                                                                    |         10 |        715 |         50 |        148 |        913 |
+| app\api (Files)                                                            |          4 |        253 |         22 |         56 |        331 |
+| app\api\scrapers                                                           |          6 |        462 |         28 |         92 |        582 |
+| app\models                                                                 |          2 |         42 |          1 |          6 |         49 |
+| app\services                                                               |          4 |        232 |         13 |         37 |        282 |
+| app\utils                                                                  |          4 |        133 |          9 |         23 |        165 |
+| deployment                                                                 |          1 |         46 |          1 |          4 |         51 |
+| frontend                                                                   |         19 |     21,039 |        120 |        132 |     21,291 |
+| frontend (Files)                                                           |          4 |     20,273 |         15 |         15 |     20,303 |
+| frontend\public                                                            |          2 |         45 |         23 |          2 |         70 |
+| frontend\src                                                               |         13 |        721 |         82 |        115 |        918 |
+| frontend\src (Files)                                                       |          7 |        343 |         18 |         54 |        415 |
+| frontend\src\components                                                    |          2 |         49 |          2 |          9 |         60 |
+| frontend\src\contexts                                                      |          2 |        124 |         19 |         24 |        167 |
+| frontend\src\services                                                      |          1 |         76 |         38 |          8 |        122 |
+| frontend\src\styles                                                        |          1 |        129 |          5 |         20 |        154 |
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                                   | language         | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| d:\RAG\News-Aggregator-With-Rag\README.md                                  | Markdown         |        143 |          0 |         52 |        195 |
+| d:\RAG\News-Aggregator-With-Rag\app\.dockerignore                          | Ignore           |         19 |         10 |          9 |         38 |
+| d:\RAG\News-Aggregator-With-Rag\app\Dockerfile                             | Docker           |         17 |         10 |         10 |         37 |
+| d:\RAG\News-Aggregator-With-Rag\app\__init__.py                            | Python           |          0 |          0 |          1 |          1 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\__init__.py                        | Python           |          0 |          1 |          0 |          1 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\gemini_integration.py              | Python           |         73 |          6 |         14 |         93 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\routes.py                          | Python           |        158 |         14 |         36 |        208 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\scheduler.py                       | Python           |         22 |          1 |          6 |         29 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\scrapers\__init__.py               | Python           |          0 |          0 |          1 |          1 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\scrapers\dantri_rss_scraper.py     | Python           |        127 |          8 |         27 |        162 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\scrapers\thanhnien_rss_scraper.py  | Python           |        108 |          4 |         18 |        130 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\scrapers\tuoitre_scraper.py        | Python           |        102 |          7 |         18 |        127 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\scrapers\vietnamnet_rss_scraper.py | Python           |         74 |          4 |         15 |         93 |
+| d:\RAG\News-Aggregator-With-Rag\app\api\scrapers\vnexpress_scraper.py      | Python           |         51 |          5 |         13 |         69 |
+| d:\RAG\News-Aggregator-With-Rag\app\main.py                                | Python           |         13 |          3 |          6 |         22 |
+| d:\RAG\News-Aggregator-With-Rag\app\models\__init__.py                     | Python           |          0 |          0 |          1 |          1 |
+| d:\RAG\News-Aggregator-With-Rag\app\models\article_model.py                | Python           |         42 |          1 |          5 |         48 |
+| d:\RAG\News-Aggregator-With-Rag\app\requirements.txt                       | pip requirements |         17 |          1 |          0 |         18 |
+| d:\RAG\News-Aggregator-With-Rag\app\services\__init__.py                   | Python           |          0 |          0 |          1 |          1 |
+| d:\RAG\News-Aggregator-With-Rag\app\services\article_processor.py          | Python           |         71 |          4 |          9 |         84 |
+| d:\RAG\News-Aggregator-With-Rag\app\services\vector_db_service.py          | Python           |        128 |          5 |         21 |        154 |
+| d:\RAG\News-Aggregator-With-Rag\app\services\vectorizer_service.py         | Python           |         33 |          4 |          6 |         43 |
+| d:\RAG\News-Aggregator-With-Rag\app\utils\__init__.py                      | Python           |          0 |          0 |          1 |          1 |
+| d:\RAG\News-Aggregator-With-Rag\app\utils\common.py                        | Python           |         10 |          1 |          2 |         13 |
+| d:\RAG\News-Aggregator-With-Rag\app\utils\logging_config.py                | Python           |         36 |          1 |          2 |         39 |
+| d:\RAG\News-Aggregator-With-Rag\app\utils\scraper_helpers.py               | Python           |         87 |          7 |         18 |        112 |
+| d:\RAG\News-Aggregator-With-Rag\deployment\docker-compose.yml              | YAML             |         46 |          1 |          4 |         51 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\.dockerignore                     | Ignore           |         16 |          9 |          8 |         33 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\Dockerfile                        | Docker           |          7 |          6 |          5 |         18 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\package-lock.json                 | JSON             |     20,198 |          0 |          1 |     20,199 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\package.json                      | JSON             |         52 |          0 |          1 |         53 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\public\index.html                 | HTML             |         20 |         23 |          1 |         44 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\public\manifest.json              | JSON             |         25 |          0 |          1 |         26 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\App.js                        | JavaScript       |        184 |          5 |         25 |        214 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\App.test.js                   | JavaScript       |          7 |          0 |          2 |          9 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\components\Article.js         | JavaScript       |         39 |          1 |          6 |         46 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\components\SummaryPanel.js    | JavaScript       |         10 |          1 |          3 |         14 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\contexts\AppContext.js        | JavaScript       |        110 |         15 |         18 |        143 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\contexts\ThemeContext.js      | JavaScript       |         14 |          4 |          6 |         24 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\index.css                     | CSS              |        120 |          6 |         20 |        146 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\index.js                      | JavaScript       |         18 |          3 |          4 |         25 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\logo.svg                      | XML              |          1 |          0 |          0 |          1 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\reportWebVitals.js            | JavaScript       |         12 |          0 |          2 |         14 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\services\api.js               | JavaScript       |         76 |         38 |          8 |        122 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\setupTests.js                 | JavaScript       |          1 |          4 |          1 |          6 |
+| d:\RAG\News-Aggregator-With-Rag\frontend\src\styles\App.css                | CSS              |        129 |          5 |         20 |        154 |
+| Total                                                                      |                  |     22,416 |        218 |        428 |     23,062 |
++----------------------------------------------------------------------------+------------------+------------+------------+------------+------------+

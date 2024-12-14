@@ -101,19 +101,19 @@ function App() {
         <Drawer variant="permanent" anchor="left" classes={{ paper: 'sidebar-drawer' }}>
           <Box p={2} className="sidebar-container">
             <Typography variant="h6" gutterBottom>
-              Filters
+              Bộ Lọc
             </Typography>
 
             {/* Sort By */}
-            <Typography className="filter-label">Sort By</Typography>
+            <Typography className="filter-label">Sắp Xếp Theo</Typography>
             <FormControl fullWidth className="compact-dropdown">
               <Select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="compact-dropdown"
               >
-                <MenuItem value="score">Relevance</MenuItem>
-                <MenuItem value="date">Date</MenuItem>
+                <MenuItem value="score">Độ Liên Quan</MenuItem>
+                <MenuItem value="date">Ngày Tháng</MenuItem>
               </Select>
             </FormControl>
 
@@ -125,15 +125,15 @@ function App() {
                   onChange={(e) => setSortOrder(e.target.value)}
                   className="compact-dropdown"
                 >
-                  <MenuItem value="asc">Ascending</MenuItem>
-                  <MenuItem value="desc">Descending</MenuItem>
+                  <MenuItem value="asc">Cũ Nhất</MenuItem>
+                  <MenuItem value="desc">Mới Nhất</MenuItem>
                 </Select>
               </FormControl>
             )}
 
             {/* Sources */}
             <Typography variant="subtitle1" gutterBottom>
-              Sources
+              Nguồn
             </Typography>
             <FormGroup>
               {['VNExpress', 'Tuổi Trẻ', 'VietnamNet', 'Thanh Niên', 'Dân Trí'].map((source) => (
@@ -162,7 +162,7 @@ function App() {
               value={searchQuery}
               onChange={handleSearchInput}
               variant="outlined"
-              placeholder="Search for news articles..."
+              placeholder="Tìm một bài báo..."
               onKeyDown={handleKeyDown}
               className="search-input"
             />
@@ -181,7 +181,7 @@ function App() {
               ))
             ) : (
               <Typography align="center" color="textSecondary">
-                {loading ? '' : 'No articles found. Try refining your search.'}
+                {loading ? '' : 'Không tìm được bài báo nào. Hãy thử lại với từ khóa khác.'}
               </Typography>
             )}
           </Box>
