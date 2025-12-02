@@ -37,15 +37,28 @@ Before you begin, ensure you have the following installed:
     Create a `.env` file in the root directory and add the following environment variables:
 
     ```env
-    # Pinecone API Key
+    # Pinecone API Key (required)
     PINECONE_API_KEY=your_pinecone_api_key
 
-    # Pinecone Host
-    PINECONE_HOST=your_pinecone_host
+    # Pinecone Index Name (optional, defaults to 'aggsum')
+    # The index will be created automatically if it doesn't exist
+    PINECONE_INDEX_NAME=aggsum
 
-    # Google Gemini API Key
+    # Pinecone Region (optional, defaults to 'us-east-1')
+    # Only needed if creating a new serverless index
+    PINECONE_REGION=us-east-1
+
+    # Pinecone Vector Dimension (optional, defaults to 768 for PhoBERT)
+    PINECONE_DIMENSION=768
+
+    # Google Gemini API Key (required)
     GEMINI_API_KEY=your_gemini_api_key
     ```
+
+    **Note:** 
+    - The new Pinecone SDK automatically determines the host from your API key, so `PINECONE_HOST` is no longer needed.
+    - The index will be created automatically on first run if it doesn't exist.
+    - Make sure your Pinecone API key has permissions to create indexes (or create the index manually in the Pinecone console).
 
 3. **Build and Run the Containers**
     To run the project using Docker, follow these steps:

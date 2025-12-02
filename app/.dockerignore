@@ -26,6 +26,9 @@ logs/
 build/
 dist/
 
+# Exclude Hugging Face cache (models should be downloaded at runtime)
+hf_cache/
+
 # Exclude Docker compose files
 ../deployment/docker-compose.yml
 

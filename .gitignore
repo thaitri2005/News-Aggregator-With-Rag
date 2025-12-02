@@ -10,3 +10,5 @@ deployment/.env
 
 # Docker
 *.log
+
+app/hf_cache/

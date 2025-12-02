@@ -14,5 +14,5 @@ webdriver-manager==4.0.2
 feedparser==6.0.11
 transformers==4.31.0
 torch==2.0.1
-pinecone-client
+pinecone>=3.0.0
 numpy<2.0.0

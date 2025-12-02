@@ -1,26 +1,125 @@
 # app/services/vector_db_service.py
-from pinecone import Pinecone
-from services.vectorizer_service import PhoBERTVectorizer
+from pinecone import Pinecone, ServerlessSpec
+from pinecone.exceptions import PineconeException, PineconeApiException
+from services.vectorizer_service import get_vectorizer
 import os
 import logging
 import re
+import time
 
 logger = logging.getLogger(__name__)
 
 class VectorDBService:
+    _instance = None
+    _initialized = False
+    
+    def __new__(cls):
+        """
+        Singleton pattern: ensures only one instance of VectorDBService exists.
+        """
+        if cls._instance is None:
+            cls._instance = super(VectorDBService, cls).__new__(cls)
+        return cls._instance
+    
     def __init__(self):
+        # Only initialize once due to singleton pattern
+        if VectorDBService._initialized:
+            return
+            
         # Initialize Pinecone
         api_key = os.getenv("PINECONE_API_KEY")
-        host = os.getenv("PINECONE_HOST")
+        index_name = os.getenv("PINECONE_INDEX_NAME", "aggsum")
+        dimension = int(os.getenv("PINECONE_DIMENSION", "768"))  # PhoBERT dimension
+        pinecone_region = os.getenv("PINECONE_REGION", "us-east-1")  # Default AWS region
 
-        if not api_key or not host:
-            raise ValueError("PINECONE_API_KEY and PINECONE_HOST must be set in the environment variables.")
+        if not api_key:
+            raise ValueError("PINECONE_API_KEY must be set in the environment variables.")
 
+        logger.info(f"Initializing Pinecone connection to index: {index_name}")
         self.pinecone = Pinecone(api_key=api_key)
-        self.index = self.pinecone.Index('aggsum', host=host)
+        self.index_name = index_name
+        self.pinecone_region = pinecone_region
+        
+        # Check if index exists, create if it doesn't
+        self._ensure_index_exists(dimension)
+        
+        # Connect to the index
+        self.index = self.pinecone.Index(index_name)
 
-        # Initialize PhoBERT for encoding
-        self.vectorizer = PhoBERTVectorizer()
+        # Initialize PhoBERT for encoding (singleton, so only loads once)
+        self.vectorizer = get_vectorizer()
+        VectorDBService._initialized = True
+    
+    def _ensure_index_exists(self, dimension=768):
+        """
+        Checks if the Pinecone index exists, and creates it if it doesn't.
+        """
+        try:
+            # List all indexes
+            existing_indexes = [idx.name for idx in self.pinecone.list_indexes()]
+            
+            if self.index_name not in existing_indexes:
+                logger.info(f"Index '{self.index_name}' not found. Creating new index with dimension {dimension}...")
+                
+                # Create the index (serverless)
+                try:
+                    self.pinecone.create_index(
+                        name=self.index_name,
+                        dimension=dimension,
+                        metric="cosine",
+                        spec=ServerlessSpec(
+                            cloud="aws",
+                            region=self.pinecone_region
+                        )
+                    )
+                    logger.info(f"Index '{self.index_name}' creation initiated (serverless). Waiting for it to be ready...")
+                    self._wait_for_index_ready()
+                except PineconeApiException as e:
+                    # Check if index already exists (race condition or concurrent creation)
+                    if hasattr(e, 'status_code') and e.status_code == 409:
+                        logger.info(f"Index '{self.index_name}' already exists (created concurrently or exists).")
+                        self._wait_for_index_ready()
+                    else:
+                        logger.error(f"Failed to create index: {e}")
+                        logger.error("Please create the index manually in Pinecone console or check your API key permissions.")
+                        logger.warning("Attempting to proceed with existing index connection...")
+                except Exception as e:
+                    # Handle other exceptions
+                    error_str = str(e).lower()
+                    if "already exists" in error_str or "409" in error_str:
+                        logger.info(f"Index '{self.index_name}' already exists.")
+                        self._wait_for_index_ready()
+                    else:
+                        logger.error(f"Failed to create index: {e}")
+                        logger.warning("Attempting to proceed with existing index connection...")
+            else:
+                logger.info(f"Index '{self.index_name}' already exists.")
+                # Verify index is ready
+                self._wait_for_index_ready()
+        except Exception as e:
+            logger.error(f"Error checking/creating index: {e}")
+            # If we can't create, try to connect anyway (might already exist)
+            logger.warning("Attempting to connect to existing index...")
+    
+    def _wait_for_index_ready(self, max_wait_time=300):
+        """
+        Waits for the index to be ready, polling every 5 seconds.
+        """
+        start_time = time.time()
+        while time.time() - start_time < max_wait_time:
+            try:
+                index_description = self.pinecone.describe_index(self.index_name)
+                if hasattr(index_description, 'status') and index_description.status.get('ready', False):
+                    logger.info(f"Index '{self.index_name}' is ready!")
+                    return
+                elif hasattr(index_description, 'status'):
+                    logger.info(f"Index status: {index_description.status}")
+            except Exception as e:
+                logger.debug(f"Waiting for index to be ready: {e}")
+            
+            time.sleep(5)
+        
+        logger.warning(f"Index '{self.index_name}' may not be ready yet, but proceeding anyway...")
 
     @staticmethod
     def clean_text(text):

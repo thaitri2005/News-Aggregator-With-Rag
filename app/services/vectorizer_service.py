@@ -3,15 +3,36 @@ from transformers import AutoTokenizer, AutoModel
 import torch
 import numpy as np
 import re
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Module-level singleton instance
+_vectorizer_instance = None
+
+def get_vectorizer(model_name='vinai/phobert-base', target_dim=768):
+    """
+    Get or create the singleton PhoBERTVectorizer instance.
+    This ensures the model is only loaded once across the entire application.
+    """
+    global _vectorizer_instance
+    if _vectorizer_instance is None:
+        _vectorizer_instance = PhoBERTVectorizer(model_name, target_dim)
+    return _vectorizer_instance
 
 class PhoBERTVectorizer:
     def __init__(self, model_name='vinai/phobert-base', target_dim=768):
         """
         Initializes the PhoBERT vectorizer with the specified model and target dimension.
+        Use get_vectorizer() function instead of direct instantiation to ensure singleton pattern.
         """
+        print("Loading PhoBERT model... This may take a few minutes.")
+        logger.info("Loading PhoBERT model... This may take a few minutes.")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name)
         self.target_dim = target_dim  # Target dimension for embeddings
+        print("PhoBERT model loaded successfully.")
+        logger.info("PhoBERT model loaded successfully.")
 
     def encode_text(self, text):
         """

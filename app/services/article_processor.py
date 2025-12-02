@@ -1,6 +1,5 @@
 # app/services/article_processor.py
-from services.vectorizer_service import PhoBERTVectorizer
-from services.vector_db_service import VectorDBService
+from services.vector_db_service import VectorDBService, get_vectorizer
 import logging
 import re
 
@@ -8,8 +7,10 @@ logger = logging.getLogger(__name__)
 
 class ArticleProcessor:
     def __init__(self):
-        self.vectorizer = PhoBERTVectorizer()
-        self.vector_db = VectorDBService()
+        # Use singleton instances - these will be shared across all ArticleProcessor instances
+        self.vector_db = VectorDBService()  # Singleton - creates vectorizer internally
+        # Get the shared vectorizer instance from VectorDBService
+        self.vectorizer = self.vector_db.vectorizer
 
     def process_and_store_article(self, article):
         """

@@ -55,7 +55,7 @@ def summarize_article(article_text, max_retries=3, prompt=None):
 
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.5-flash",
             generation_config=generation_config,
         )
         logger.info("Gemini GenerativeModel initialized successfully.")
