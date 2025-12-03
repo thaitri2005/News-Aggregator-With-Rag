@@ -199,7 +199,7 @@ class VectorDBService:
         try:
             logger.info(f"Fetching vector for ID: {article_id} (namespace: {namespace})")
             results = self.index.fetch(ids=[article_id], namespace=namespace)
-            vectors = results.get("vectors", {})
+            vectors = results.vectors if hasattr(results, 'vectors') else {}
             if not vectors:
                 logger.warning(f"No results found for ID: {article_id}")
                 return []

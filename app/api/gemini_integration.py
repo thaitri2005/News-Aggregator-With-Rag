@@ -50,13 +50,20 @@ def summarize_article(article_text, max_retries=3, prompt=None):
         "top_p": 0.8,
         "top_k": 40,
         "max_output_tokens": 512,
-        "response_mime_type": "text/plain",
     }
+
+    # Set permissive safety settings to avoid blocking legitimate news content
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+    ]
 
     try:
         model = genai.GenerativeModel(
             model_name="gemini-2.5-flash",
-            generation_config=generation_config,
+            safety_settings=safety_settings,
         )
         logger.info("Gemini GenerativeModel initialized successfully.")
     except Exception as e:
@@ -66,10 +73,11 @@ def summarize_article(article_text, max_retries=3, prompt=None):
     for attempt in range(max_retries):
         try:
             logger.info(f"Attempt {attempt + 1}: Summarizing article with {len(article_text)} characters.")
-            chat_session = model.start_chat(history=[])
-            response = chat_session.send_message(f"{prompt}\n\n{article_text}")
+            
+            # Use generate_content directly instead of chat session
+            response = model.generate_content(f"{prompt}\n\n{article_text}")
+            
             summary = response.text.strip()
-
             logger.info("Article summarized successfully.")
             return summary.replace("Tóm tắt:", "").strip()
 
