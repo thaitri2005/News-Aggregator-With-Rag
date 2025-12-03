@@ -70,7 +70,10 @@ class ArticleProcessor:
                 'title': title,
                 'content': content,  # Full content stored in metadata
                 'source_url': article['source_url'],
-                'date': article['date'],  # Ensure the date is already in ISO format
+                # Ensure Pinecone metadata values are JSON-serializable primitives
+                'date': (
+                    article['date'].isoformat() if hasattr(article.get('date'), 'isoformat') else str(article.get('date'))
+                ),
                 'source': article['source'],
             }
             logger.debug(f"Generated metadata: {metadata}")
