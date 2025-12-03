@@ -15,23 +15,35 @@ const SummaryPanel = ({ open, selectedArticle, onClose }) => {
       maxWidth="md"
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          backdropFilter: 'blur(6px)',
-          boxShadow: '0 12px 32px rgba(26,115,232,0.25)'
+          borderRadius: 2,
+          border: (theme) => theme.palette.mode === 'dark' ? '1px solid #2a2a2a' : '1px solid #e5e7eb',
         }
       }}
     >
-      <DialogTitle id="summary-dialog-title" sx={{ fontWeight: 700 }}>
+      <DialogTitle id="summary-dialog-title" sx={{ fontWeight: 700, pb: 2 }}>
         {title}
       </DialogTitle>
-      <Divider />
-      <DialogContent>
-        <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
+      <Divider sx={{ opacity: 0.6 }} />
+      <DialogContent sx={{ pt: 3, pb: 3 }}>
+        <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
           {summary}
         </Typography>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} variant="contained" sx={{ borderRadius: 2 }}>
+      <Divider sx={{ opacity: 0.6 }} />
+      <DialogActions sx={{ p: 2.5 }}>
+        <Button 
+          onClick={onClose} 
+          variant="outlined"
+          sx={{ 
+            borderRadius: 1.5,
+            px: 3,
+            borderColor: (theme) => theme.palette.mode === 'dark' ? '#3a3a3a' : '#e5e7eb',
+            '&:hover': {
+              borderColor: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+              background: 'transparent'
+            }
+          }}
+        >
           Đóng
         </Button>
       </DialogActions>

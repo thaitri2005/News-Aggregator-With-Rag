@@ -81,32 +81,50 @@ function App() {
   const filteredArticles = articles.filter((article) => selectedSources.includes(article.source));
 
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #e3f2fd 0%, #f8fafc 100%)' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       <Navbar />
-      <Container maxWidth="xl" sx={{ pt: 4 }}>
-        <Grid container spacing={4}>
+      <Container maxWidth="xl" sx={{ pt: 5, pb: 6 }}>
+        <Grid container spacing={3}>
           {/* Sidebar */}
           <Grid item xs={12} md={3}>
-            <Paper elevation={6} sx={{ p: 3, borderRadius: 4, background: 'rgba(255,255,255,0.85)', boxShadow: '0 8px 32px 0 rgba(31,38,135,0.15)' }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#1a73e8' }}>
+            <Paper 
+              elevation={0}
+              sx={{ 
+                p: 3, 
+                borderRadius: 2,
+                border: (theme) => theme.palette.mode === 'dark' ? '1px solid #2a2a2a' : '1px solid #e5e7eb',
+                background: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#ffffff',
+                position: 'sticky',
+                top: 80
+              }}
+            >
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
                 Bộ Lọc
               </Typography>
-              <Typography className="filter-label" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>Sắp Xếp Theo</Typography>
+              <Typography sx={{ mt: 2, mb: 1, fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, opacity: 0.7 }}>Sắp Xếp Theo</Typography>
               <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <Select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)}
+                  sx={{ borderRadius: 1.5 }}
+                >
                   <MenuItem value="score">Độ Liên Quan</MenuItem>
                   <MenuItem value="date">Ngày Tháng</MenuItem>
                 </Select>
               </FormControl>
               {sortBy === 'date' && (
-                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                  <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+                  <Select 
+                    value={sortOrder} 
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    sx={{ borderRadius: 1.5 }}
+                  >
                     <MenuItem value="asc">Cũ Nhất</MenuItem>
                     <MenuItem value="desc">Mới Nhất</MenuItem>
                   </Select>
                 </FormControl>
               )}
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography sx={{ fontWeight: 600, mb: 2, fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, opacity: 0.7 }}>
                 Nguồn
               </Typography>
               <FormGroup>
@@ -117,10 +135,16 @@ function App() {
                       <Checkbox
                         checked={selectedSources.includes(source)}
                         onChange={() => handleSourceToggle(source)}
-                        sx={{ color: '#1a73e8' }}
+                        size="small"
+                        sx={{ 
+                          '&.Mui-checked': {
+                            color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000'
+                          }
+                        }}
                       />
                     }
-                    label={source}
+                    label={<Typography sx={{ fontSize: '0.9rem' }}>{source}</Typography>}
+                    sx={{ mb: 0.5 }}
                   />
                 ))}
               </FormGroup>
@@ -128,22 +152,75 @@ function App() {
           </Grid>
           {/* Main Content */}
           <Grid item xs={12} md={9}>
-            <Box sx={{ mb: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <Typography className="app-title" variant="h3" align="center" color="primary" gutterBottom sx={{ fontWeight: 800, letterSpacing: 1, mb: 2, textShadow: '0 2px 8px #b3e5fc' }}>
+            <Box sx={{ mb: 5 }}>
+              <Typography 
+                variant="h3" 
+                align="center" 
+                gutterBottom 
+                sx={{ 
+                  fontWeight: 800, 
+                  letterSpacing: -2, 
+                  mb: 1,
+                  fontSize: { xs: '2.5rem', md: '3.5rem' },
+                  background: (theme) => theme.palette.mode === 'dark' 
+                    ? 'linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%)'
+                    : 'linear-gradient(135deg, #000000 0%, #4a4a4a 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
                 Tin Nhanh Báo Lẹ
               </Typography>
-              <TextField
-                value={searchQuery}
-                onChange={handleSearchInput}
-                variant="outlined"
-                placeholder="Tìm một bài báo..."
-                onKeyDown={handleKeyDown}
-                sx={{ width: '100%', maxWidth: 600, borderRadius: 8, background: '#fff', boxShadow: '0 2px 8px #b3e5fc' }}
-                InputProps={{ style: { borderRadius: 30, fontSize: '1.1rem', padding: '10px 20px' } }}
-              />
-              <Button onClick={handleSearch} variant="contained" size="large" sx={{ mt: 2, borderRadius: 8, fontWeight: 700, background: 'linear-gradient(90deg, #1a73e8 0%, #2196f3 100%)', color: '#fff', boxShadow: '0 4px 16px #90caf9' }}>
-                Tìm kiếm
-              </Button>
+              <Typography 
+                align="center"
+                sx={{
+                  mb: 4,
+                  opacity: 0.6,
+                  fontSize: '0.95rem',
+                  letterSpacing: 0.5
+                }}
+              >
+                Tìm kiếm tin tức nhanh chóng và chính xác
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, maxWidth: 700, mx: 'auto' }}>
+                <TextField
+                  value={searchQuery}
+                  onChange={handleSearchInput}
+                  variant="outlined"
+                  placeholder="Tìm một bài báo..."
+                  onKeyDown={handleKeyDown}
+                  fullWidth
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      background: (theme) => theme.palette.mode === 'dark' ? '#1a1a1a' : '#f9fafb',
+                      '& fieldset': {
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? '#2a2a2a' : '#e5e7eb'
+                      }
+                    }
+                  }}
+                />
+                <Button 
+                  onClick={handleSearch} 
+                  variant="contained" 
+                  size="large" 
+                  sx={{ 
+                    borderRadius: 2, 
+                    fontWeight: 600,
+                    px: 4,
+                    textTransform: 'none',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      boxShadow: 'none',
+                      transform: 'translateY(-1px)'
+                    },
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Tìm
+                </Button>
+              </Box>
             </Box>
             <Box className="articles-list">
               {filteredArticles.length > 0 ? (

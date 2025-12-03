@@ -9,21 +9,40 @@ const Navbar = () => {
   const { darkMode, toggleDarkMode } = useThemeContext();
 
   return (
-    <AppBar position="sticky" elevation={6} sx={{
-      background: darkMode
-        ? 'rgba(30, 30, 30, 0.95)'
-        : 'linear-gradient(90deg, #1a73e8 0%, #2196f3 100%)',
-      backdropFilter: 'blur(8px)',
-      boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-    }}>
-      <Toolbar>
-        <NewspaperIcon sx={{ fontSize: 32, mr: 2, color: '#fff' }} />
-        <Typography variant="h5" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: 1, color: '#fff' }}>
+    <AppBar 
+      position="sticky" 
+      elevation={0}
+      sx={{
+        background: (theme) => theme.palette.background.paper,
+        borderBottom: (theme) => theme.palette.mode === 'dark' ? '1px solid #2a2a2a' : '1px solid #e5e7eb',
+        backdropFilter: 'blur(10px)',
+      }}
+    >
+      <Toolbar sx={{ py: 1 }}>
+        <NewspaperIcon sx={{ fontSize: 28, mr: 2 }} />
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            flexGrow: 1, 
+            fontWeight: 700, 
+            letterSpacing: -0.5,
+            fontSize: '1.3rem'
+          }}
+        >
           News Aggregator
         </Typography>
         <Box>
-          <IconButton onClick={toggleDarkMode} color="inherit">
-            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+          <IconButton 
+            onClick={toggleDarkMode} 
+            sx={{
+              border: (theme) => theme.palette.mode === 'dark' ? '1px solid #2a2a2a' : '1px solid #e5e7eb',
+              borderRadius: 1.5,
+              '&:hover': {
+                background: (theme) => theme.palette.mode === 'dark' ? '#1a1a1a' : '#f3f4f6'
+              }
+            }}
+          >
+            {darkMode ? <Brightness7Icon fontSize="small" /> : <Brightness4Icon fontSize="small" />}
           </IconButton>
         </Box>
       </Toolbar>
